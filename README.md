@@ -4,10 +4,12 @@ The purpose of this repo is to provide a standard dataset for testing traffic su
 
 The following road user classes are supported:
 1. Pedestrians
-1. Bicyclists
+1. Bicyclists/Motorbikes
 1. Cars
 1. Trucks
 1. Buses
+
+The videos are stored as 720p .jpg files. By default, monocular videos are generated, but an option exists for stereo/trinocular or even more cameras through the `--cam_setup` parameter. 
 
 ### License
 To be decided...
