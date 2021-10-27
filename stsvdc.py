@@ -2,7 +2,7 @@
     Creates standard videos 
 """
 
-import argparse 
+import argparse
 from pathlib import Path 
 import sys
 import random
@@ -11,13 +11,17 @@ import time
 import carla
 from carla import VehicleLightState as vls
 
+def loc_dist(a, b):
+    return (a.x - b.x)**2 + (a.y - b.y)**2 + (a.z - b.z)**2
+    
+
 def main(host:str, port:int, tm_port:int):
     client = carla.Client(host, port)
     client.set_timeout(10.0)
     
     # Some parameters
-    number_of_vehicles=100
-    number_of_pedestrians=10
+    number_of_vehicles=80
+    number_of_pedestrians=42
 
     # Random seed
     seed = 420
@@ -89,7 +93,15 @@ def main(host:str, port:int, tm_port:int):
         loc = None
         while loc is None :
             loc = world.get_random_location_from_navigation()
+            loc.z += 0.5 # To prevent collisions with the ground
+            
+            all_spawns = spawn_points + walker_spawns
+            distances = [loc_dist(previous.location, loc) for previous in all_spawns]
+            if min(distances) < 10.0:
+                # To precent collisions with other road users 
+                loc = None 
         spawn_point.location = loc
+        
         walker_spawns.append(spawn_point) 
     
     batch = list()
@@ -113,8 +125,10 @@ def main(host:str, port:int, tm_port:int):
             raise ValueError(res.error)
         else:
             pedestrians.append({'id': res.actor_id, 'speed': float(pedestrian_speeds[i])})
-        
-    batch = []
+
+    print("Actors spawned!")
+
+    batch = list()
     walker_controller_bp = world.get_blueprint_library().find('controller.ai.walker')
     for pedestrian in pedestrians:
         batch.append(SpawnActor(walker_controller_bp, carla.Transform(), pedestrian["id"]))
