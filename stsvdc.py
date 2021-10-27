@@ -246,6 +246,9 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
     (folder / 'camera_calibration.txt').write_text('\n'.join(lines))
 
     bus_names = ('volkswagen.t2', )
+    truck_names = ('carlamotors.firetruck', 'ford.ambulance', 'mercedes.sprinter', 'tesla.cybertruck')
+
+    first_id = min(vehicles)
 
     # Start recording video
     for frame_no in range(scenario.length):
@@ -263,10 +266,38 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
             vehicle = world.get_actor(vehicle_id)
             loc = vehicle.get_location()
 
-            if vehicle.attributes['number_of_wheels'] == "2":
+            vehicle_type = 'car'
+            if any([bn in vehicle.type_id for bn in bus_names]):
+                vehicle_type = 'bus'
+            elif any([tn in vehicle.type_id for tn in truck_names]):
+                vehicle_type = 'truck'
+            elif vehicle.attributes['number_of_wheels'] == "2":
                 vehicle_type = 'bicyclist'
             
-            #lines.append(line)
+            bbox = vehicle.bounding_box
+            x = bbox.extent.x*2
+            y = bbox.extent.y*2
+            z = bbox.extent.z*2
+            size_str = ','.join([str(v) for v in (x, y, z)])
+
+            line = f"{vehicle_type};{vehicle_id-first_id};{loc};{size_str}"
+            lines.append(line)
+        
+        for pedestrian in pedestrians:
+            pedestrian_id = pedestrian['id']
+            actor = world.get_actor(pedestrian_id)
+            loc = actor.get_location()
+            
+            bbox = actor.bounding_box
+            x = bbox.extent.x*2
+            y = bbox.extent.y*2
+            z = bbox.extent.z*2
+            size_str = ','.join([str(v) for v in (x, y, z)])
+
+            line = f"pedestrian;{pedestrian_id-first_id};{loc};{size_str}"
+            lines.append(line)
+        
+        (pos_folder / f"{long_str(frame_no, 6)}.txt").write_text('\n'.join(lines))
 
 def sensor_callback(data, sensor_queue, cam_name, start_frame):
     sensor_queue.put(cam_name)
