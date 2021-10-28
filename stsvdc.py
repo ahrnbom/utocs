@@ -38,7 +38,7 @@ def default_scenarios():
 
     return scenrarios
 
-def main(host:str, port:int, tm_port:int, cam_setup:list):
+def main(host:str, port:int, tm_port:int, cam_setup:list, folder:Path):
     client = carla.Client(host, port)
     client.set_timeout(10.0)
     traffic_manager = client.get_trafficmanager(tm_port)
@@ -46,9 +46,9 @@ def main(host:str, port:int, tm_port:int, cam_setup:list):
     scenarios = default_scenarios()
     for s_num, scenario in enumerate(scenarios):
         print(f"Starting scenario {s_num+1} / {len(scenarios)}")
-        run_scenario(client, traffic_manager, cam_setup, scenario, s_num)
+        run_scenario(client, traffic_manager, cam_setup, scenario, s_num, folder)
 
-def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, scenario_number:int):
+def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, scenario_number:int, folder:Path):
     client.load_world(scenario.map)
     time.sleep(1)
     print(f"Loaded map {scenario.map}") 
@@ -227,10 +227,10 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
         cameras.append({'obj': cam, 'id': cam_no, 'loc': cam_loc, 'dir': base_rotation, 'name':cam_name})
 
     # Collect static data (camera positions)
-    folder = Path('scenarios') / f"{long_str(scenario_number)}"
-    folder.mkdir(parents=True, exist_ok=True)
+    scenario_folder = folder / 'scenarios' / f"{long_str(scenario_number)}"
+    scenario_folder.mkdir(parents=True, exist_ok=True)
 
-    pos_folder = folder / 'positions'
+    pos_folder = scenario_folder / 'positions'
     pos_folder.mkdir(exist_ok=True)
 
     lines = list()
@@ -243,7 +243,7 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
     Cy = im_size_y / 2.0
     lines.append(f"Intrinsics: f={f}, Cx={Cx}, Cy={Cy}")
 
-    (folder / 'camera_calibration.txt').write_text('\n'.join(lines))
+    (scenario_folder / 'camera_calibration.txt').write_text('\n'.join(lines))
 
     bus_names = ('volkswagen.t2', )
     truck_names = ('carlamotors.firetruck', 'ford.ambulance', 'mercedes.sprinter', 'tesla.cybertruck')
@@ -318,10 +318,13 @@ if __name__ == '__main__':
     args.add_argument("--port", default=2000, help="Port to connect to the server", type=int)
     args.add_argument("--tm_port", default=8000, type=int, help="Traffic Manager communications port")
     args.add_argument("--cam_setup", default=[(0,0,0)], help="List of camera offsets. To make a stereo camera setup with 0.5 metres distance, do [(0,0,0), (0.5,0,0)]. Each tuple contains x, y and z distances from the default camera position. The camera is always facing in positive z direction. ")
+    args.add_argument("--folder", default=".", type=str, help="Folder to store output (default is here, '.')")
     args = args.parse_args()
 
+    folder = Path(args.folder)
+
     try:
-        main(host=args.host, port=args.port, tm_port=args.tm_port, cam_setup=args.cam_setup)
+        main(host=args.host, port=args.port, tm_port=args.tm_port, cam_setup=args.cam_setup, folder=folder)
     except KeyboardInterrupt:
         pass
     except:
