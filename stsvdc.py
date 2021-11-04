@@ -39,15 +39,15 @@ def default_scenarios():
 
     return scenrarios
 
-def main(host:str, port:int, tm_port:int, cam_setup:list, folder:Path):
+def main(host:str, port:int, tm_port:int, cam_setup:list, folder:Path, scenario_number:int):
     client = carla.Client(host, port)
     client.set_timeout(10.0)
     traffic_manager = client.get_trafficmanager(tm_port)
 
     scenarios = default_scenarios()
-    for s_num, scenario in enumerate(scenarios):
-        print(f"Starting scenario {s_num+1} / {len(scenarios)}")
-        run_scenario(client, traffic_manager, cam_setup, scenario, s_num, folder)
+    scenario = scenarios[scenario_number]
+    print(f"Starting scenario {scenario_number+1} / {len(scenarios)}")
+    run_scenario(client, traffic_manager, cam_setup, scenario, scenario_number, folder)
 
 def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, scenario_number:int, folder:Path):
     client.load_world(scenario.map)
@@ -236,7 +236,7 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
         transform = carla.Transform(cam_loc, base_rotation)
         cam = world.spawn_actor(cam_bp, transform)
         cam_name = f"cam{cam_no}"
-        
+
         def closure(sensor_queue, cam_name, start_frame, ims_folder):
             return lambda data: sensor_callback(data, sensor_queue, cam_name, start_frame, ims_folder)
 
@@ -356,8 +356,10 @@ if __name__ == '__main__':
     args.add_argument("--tm_port", default=8000, type=int, help="Traffic Manager communications port")
     args.add_argument("--cam_setup", default='0,0,0', help="List of camera offsets. To make a stereo camera setup with 0.5 metres distance, do '0,0,0;0.5,0,0'. Each tuple contains x, y and z distances from the default camera position. The camera is always facing in positive z direction. Separate by semicolons (note that you probably need quotes around this argument).")
     args.add_argument("--folder", default="./output", type=str, help="Folder to store output (default is './output')")
+    args.add_argument("--scenario_number", default=0, type=int, help="Which scenario to run")
     args = args.parse_args()
 
+    s_num = args.scenario_number 
     folder = Path(args.folder)
 
     try:
@@ -366,7 +368,9 @@ if __name__ == '__main__':
             x, y, z = [float(v) for v in cam_str.split(',')]
             cams.append((x,y,z))
         
-        main(host=args.host, port=args.port, tm_port=args.tm_port, cam_setup=cams, folder=folder)
+        main(host=args.host, port=args.port, tm_port=args.tm_port, cam_setup=cams, 
+             folder=folder, scenario_number=s_num)
+
     except KeyboardInterrupt:
         pass
     except:
