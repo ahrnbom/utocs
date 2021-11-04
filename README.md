@@ -17,4 +17,4 @@ To be decided...
 ### Instructions
 1. Install Carla Simulator 0.9.12, both the Python package and the server
 1. Start the server with `./CarlaUE4.sh` in the appropriate folder
-1. Run `python stsvdc.py`
+1. While the server is running, execute `python start.py`

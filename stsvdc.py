@@ -18,6 +18,11 @@ from carla import VehicleLightState as vls
 def loc_dist(a, b):
     return (a.x - b.x)**2 + (a.y - b.y)**2 + (a.z - b.z)**2
 
+def vector_normalize(v:carla.Vector3D):
+    norm = v.x**2 + v.y**2 + v.z**2
+    new = carla.Vector3D(x=v.x/norm, y=v.y/norm, z=v.z/norm)
+    return new 
+
 @dataclass
 class Scenario:
     map:str
@@ -241,9 +246,9 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
             return lambda data: sensor_callback(data, sensor_queue, cam_name, start_frame, ims_folder)
 
         cam.listen(closure(sensor_queue, cam_name, start_frame, ims_folder))
-        cameras.append({'obj': cam, 'id': cam_no, 'loc': cam_loc, 'dir': base_rotation, 'name':cam_name})
+        cameras.append({'obj': cam, 'id': cam_no, 'loc': cam_loc, 'dir': base_rotation, 'name':cam_name, 'transform': transform})
 
-    # Collect static data (camera positions)
+    # Collect camera positions
     lines = list()
     for cam in cameras:
         line = f"{cam['id']}:{cam['loc']};{cam['dir']}"
@@ -260,6 +265,15 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
     truck_names = ('carlamotors.firetruck', 'ford.ambulance', 'mercedes.sprinter', 'tesla.cybertruck')
 
     first_id = min(vehicles)
+
+    # Collect ground points
+    camera = cameras[0]
+    cam_t = camera['transform']
+    forward = vector_normalize(cam_t.get_forward_vector())
+    ground_dist = camera['loc'].z / abs(forward.z) # how far we should walk until we hit ground plane (z=0)
+    ground_pos = camera['loc'] + ground_dist*forward 
+    print(ground_pos)
+    #TODO: Sample points, store them, verify visually that they are placed in sane positions
 
     # Start recording video
     for frame_no in range(scenario.length):
