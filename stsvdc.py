@@ -27,12 +27,13 @@ class Scenario:
 
 def default_scenarios():
     scenrarios = list()
+
     s = Scenario(map='Town10HD', cam_pos=(-51.66246032714844,154.75738525390625,13.823832511901855), cam_dir=(-27.47414779663086,-86.13775634765625,0.00011643866309896111), length=2000)
     scenrarios.append(s)
-    
+
     s = Scenario(map='Town01', cam_pos=(101.38188171386719,183.1450958251953,7.839078903198242), cam_dir=(-24.54534149169922,130.83407592773438,4.599098247126676e-05), length=2000)
     scenrarios.append(s)
-
+    
     s = Scenario(map='Town01', cam_pos=(323.6024475097656,185.66769409179688,10.069890975952148), cam_dir=(-32.938194274902344,55.12174987792969,3.051888779737055e-05), length=2000)
     scenrarios.append(s)
 
@@ -298,6 +299,20 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
             lines.append(line)
         
         (pos_folder / f"{long_str(frame_no, 6)}.txt").write_text('\n'.join(lines))
+    
+    # Cleanup before next scenario (if any)
+    print("Cleaning up...")
+    for actor in controller_actors:
+            actor.stop()
+    time.sleep(0.2)
+    for camera in cameras:
+        camera['obj'].stop()
+    time.sleep(0.2)
+    client.apply_batch([carla.command.DestroyActor(v_id) for v_id in vehicles])
+    time.sleep(0.2)
+    client.apply_batch([carla.command.DestroyActor(pedestrian['id']) for pedestrian in pedestrians])
+    time.sleep(0.2)
+    print("Scenario finished!")
 
 def sensor_callback(data, sensor_queue, cam_name, start_frame):
     sensor_queue.put(cam_name)
@@ -318,7 +333,7 @@ if __name__ == '__main__':
     args.add_argument("--port", default=2000, help="Port to connect to the server", type=int)
     args.add_argument("--tm_port", default=8000, type=int, help="Traffic Manager communications port")
     args.add_argument("--cam_setup", default=[(0,0,0)], help="List of camera offsets. To make a stereo camera setup with 0.5 metres distance, do [(0,0,0), (0.5,0,0)]. Each tuple contains x, y and z distances from the default camera position. The camera is always facing in positive z direction. ")
-    args.add_argument("--folder", default=".", type=str, help="Folder to store output (default is here, '.')")
+    args.add_argument("--folder", default="./output", type=str, help="Folder to store output (default is './output')")
     args = args.parse_args()
 
     folder = Path(args.folder)
