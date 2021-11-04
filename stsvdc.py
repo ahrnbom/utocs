@@ -28,13 +28,13 @@ class Scenario:
 def default_scenarios():
     scenrarios = list()
 
-    s = Scenario(map='Town10HD', cam_pos=(-51.66246032714844,154.75738525390625,13.823832511901855), cam_dir=(-27.47414779663086,-86.13775634765625,0.00011643866309896111), length=2000)
+    s = Scenario(map='Town01', cam_pos=(101.38188171386719,183.1450958251953,7.839078903198242), cam_dir=(-24.54534149169922,130.83407592773438,4.599098247126676e-05), length=200)
     scenrarios.append(s)
 
-    s = Scenario(map='Town01', cam_pos=(101.38188171386719,183.1450958251953,7.839078903198242), cam_dir=(-24.54534149169922,130.83407592773438,4.599098247126676e-05), length=2000)
+    s = Scenario(map='Town10HD', cam_pos=(-51.66246032714844,154.75738525390625,13.823832511901855), cam_dir=(-27.47414779663086,-86.13775634765625,0.00011643866309896111), length=200)
     scenrarios.append(s)
-    
-    s = Scenario(map='Town01', cam_pos=(323.6024475097656,185.66769409179688,10.069890975952148), cam_dir=(-32.938194274902344,55.12174987792969,3.051888779737055e-05), length=2000)
+
+    s = Scenario(map='Town01', cam_pos=(323.6024475097656,185.66769409179688,10.069890975952148), cam_dir=(-32.938194274902344,55.12174987792969,3.051888779737055e-05), length=200)
     scenrarios.append(s)
 
     return scenrarios
@@ -51,7 +51,7 @@ def main(host:str, port:int, tm_port:int, cam_setup:list, folder:Path):
 
 def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, scenario_number:int, folder:Path):
     client.load_world(scenario.map)
-    time.sleep(1)
+    time.sleep(5.0)
     print(f"Loaded map {scenario.map}") 
 
     # Some parameters
@@ -62,7 +62,7 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
     fov = 90.0
 
     # Random seed
-    seed = 420
+    seed = 9001
     random.seed(seed)
 
     # Setup world and traffic manager
@@ -92,6 +92,8 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
     SetAutopilot = carla.command.SetAutopilot
     SetVehicleLightState = carla.command.SetVehicleLightState
     FutureActor = carla.command.FutureActor
+
+    time.sleep(1.0)
 
     # Spawn vehicles
     vehicles = list()
@@ -198,6 +200,16 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
 
     print("World stabilized")
 
+    # Set up folders for data storage
+    scenario_folder = folder / 'scenarios' / f"{long_str(scenario_number)}"
+    scenario_folder.mkdir(parents=True, exist_ok=True)
+
+    pos_folder = scenario_folder / 'positions'
+    pos_folder.mkdir(exist_ok=True)
+
+    ims_folder = scenario_folder / 'images'
+    ims_folder.mkdir(exist_ok=True)
+
     # Spawn camera(s)
     sensor_queue = Queue()
     cameras = list()
@@ -224,16 +236,14 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
         transform = carla.Transform(cam_loc, base_rotation)
         cam = world.spawn_actor(cam_bp, transform)
         cam_name = f"cam{cam_no}"
-        cam.listen(lambda data: sensor_callback(data, sensor_queue, cam_name, start_frame))
+        
+        def closure(sensor_queue, cam_name, start_frame, ims_folder):
+            return lambda data: sensor_callback(data, sensor_queue, cam_name, start_frame, ims_folder)
+
+        cam.listen(closure(sensor_queue, cam_name, start_frame, ims_folder))
         cameras.append({'obj': cam, 'id': cam_no, 'loc': cam_loc, 'dir': base_rotation, 'name':cam_name})
 
     # Collect static data (camera positions)
-    scenario_folder = folder / 'scenarios' / f"{long_str(scenario_number)}"
-    scenario_folder.mkdir(parents=True, exist_ok=True)
-
-    pos_folder = scenario_folder / 'positions'
-    pos_folder.mkdir(exist_ok=True)
-
     lines = list()
     for cam in cameras:
         line = f"{cam['id']}:{cam['loc']};{cam['dir']}"
@@ -259,7 +269,8 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
 
         # Poll the sensors
         for _ in range(len(cameras)):
-            sensor_queue.get(True, 1.0)
+            fname = sensor_queue.get(True, 1.0)
+            print(fname)
         
         # Save ground-truth position of all road users 
         lines = list()
@@ -303,19 +314,30 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
     # Cleanup before next scenario (if any)
     print("Cleaning up...")
     for actor in controller_actors:
-            actor.stop()
+        actor.stop()
     time.sleep(0.2)
+
     for camera in cameras:
         camera['obj'].stop()
     time.sleep(0.2)
+    
     client.apply_batch([carla.command.DestroyActor(v_id) for v_id in vehicles])
     time.sleep(0.2)
+    
+    client.apply_batch([carla.command.DestroyActor(pedestrian['con']) for pedestrian in pedestrians])
+    time.sleep(0.2)
+    
     client.apply_batch([carla.command.DestroyActor(pedestrian['id']) for pedestrian in pedestrians])
     time.sleep(0.2)
+    
     print("Scenario finished!")
 
-def sensor_callback(data, sensor_queue, cam_name, start_frame):
-    sensor_queue.put(cam_name)
+def sensor_callback(data, sensor_queue, cam_name, start_frame, folder):
+    frame_no = data.frame - start_frame
+    file_name = folder / cam_name / f"{frame_no}.jpg"
+    file_name.parent.mkdir(exist_ok=True)
+    data.save_to_disk(str(file_name))
+    sensor_queue.put(file_name)
 
 # long_str(2) -> '0002'
 # long_str(42, 3) -> '042'
@@ -332,14 +354,19 @@ if __name__ == '__main__':
     args.add_argument("--host", default='127.0.0.1', help="IP of the Carla server host")
     args.add_argument("--port", default=2000, help="Port to connect to the server", type=int)
     args.add_argument("--tm_port", default=8000, type=int, help="Traffic Manager communications port")
-    args.add_argument("--cam_setup", default=[(0,0,0)], help="List of camera offsets. To make a stereo camera setup with 0.5 metres distance, do [(0,0,0), (0.5,0,0)]. Each tuple contains x, y and z distances from the default camera position. The camera is always facing in positive z direction. ")
+    args.add_argument("--cam_setup", default='0,0,0', help="List of camera offsets. To make a stereo camera setup with 0.5 metres distance, do '0,0,0;0.5,0,0'. Each tuple contains x, y and z distances from the default camera position. The camera is always facing in positive z direction. Separate by semicolons (note that you probably need quotes around this argument).")
     args.add_argument("--folder", default="./output", type=str, help="Folder to store output (default is './output')")
     args = args.parse_args()
 
     folder = Path(args.folder)
 
     try:
-        main(host=args.host, port=args.port, tm_port=args.tm_port, cam_setup=args.cam_setup, folder=folder)
+        cams = list()
+        for cam_str in args.cam_setup.split(';'):
+            x, y, z = [float(v) for v in cam_str.split(',')]
+            cams.append((x,y,z))
+        
+        main(host=args.host, port=args.port, tm_port=args.tm_port, cam_setup=cams, folder=folder)
     except KeyboardInterrupt:
         pass
     except:
