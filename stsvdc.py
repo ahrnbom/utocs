@@ -10,7 +10,7 @@ import random
 import time 
 from dataclasses import dataclass
 from queue import Queue
-from math import tan, pi 
+from math import tan, pi, sqrt
 
 import carla
 from carla import VehicleLightState as vls
@@ -54,7 +54,9 @@ def main(host:str, port:int, tm_port:int, cam_setup:list, folder:Path, scenario_
     print(f"Starting scenario {scenario_number+1} / {len(scenarios)}")
     run_scenario(client, traffic_manager, cam_setup, scenario, scenario_number, folder)
 
-def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, scenario_number:int, folder:Path):
+def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, scenario_number:int, 
+                 folder:Path, frame_skip:int=4):
+
     client.load_world(scenario.map)
     time.sleep(5.0)
     print(f"Loaded map {scenario.map}") 
@@ -242,10 +244,10 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
         cam = world.spawn_actor(cam_bp, transform)
         cam_name = f"cam{cam_no}"
 
-        def closure(sensor_queue, cam_name, start_frame, ims_folder):
-            return lambda data: sensor_callback(data, sensor_queue, cam_name, start_frame, ims_folder)
+        def closure(sensor_queue, cam_name, start_frame, ims_folder, frame_skip):
+            return lambda data: sensor_callback(data, sensor_queue, cam_name, start_frame, ims_folder, frame_skip)
 
-        cam.listen(closure(sensor_queue, cam_name, start_frame, ims_folder))
+        cam.listen(closure(sensor_queue, cam_name, start_frame, ims_folder, frame_skip))
         cameras.append({'obj': cam, 'id': cam_no, 'loc': cam_loc, 'dir': base_rotation, 'name':cam_name, 'transform': transform})
 
     # Collect camera positions
@@ -272,58 +274,82 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
     forward = vector_normalize(cam_t.get_forward_vector())
     ground_dist = camera['loc'].z / abs(forward.z) # how far we should walk until we hit ground plane (z=0)
     ground_pos = camera['loc'] + ground_dist*forward 
-    print(ground_pos)
-    #TODO: Sample points, store them, verify visually that they are placed in sane positions
+    n_points = 500
+    sqrt_n_points = int(round(sqrt(n_points)))
+    ground_range = 50 # in metres
+    ground_points = list()
+    for ix in range(sqrt_n_points):
+        dx = (ix-sqrt_n_points/2.0)*2*ground_range/sqrt_n_points
+        for iy in range(sqrt_n_points):
+            dy = (iy - sqrt_n_points/2.0)*2*ground_range/sqrt_n_points
+
+            point = carla.Location(ground_pos.x + dx, ground_pos.y + dy, ground_pos.z + 10.0)
+            point = world.ground_projection(point, 15.0)
+            if point is not None:
+                loc = point.location
+                if abs(loc.z) < 2.0: # any further up and we assume they're not on the actual ground 
+                    ground_points.append(loc)
+
+    # Store ground points in file 
+    ground_lines = [f"{point.x},{point.y},{point.z}" for point in ground_points]
+    (scenario_folder / 'ground_points.txt').write_text('\n'.join(ground_lines))
 
     # Start recording video
-    for frame_no in range(scenario.length):
+    for frame_no in range(scenario.length*frame_skip):
         # Tick the server
         world.tick()
-        print(f"Frame number {frame_no+1} / {scenario.length}")
+
+        actual_frame_no = frame_no // frame_skip
+        is_actual_frame = frame_no%frame_skip == 0
+
+        if is_actual_frame:
+            print(f"Frame number {actual_frame_no+1} / {scenario.length}")
 
         # Poll the sensors
         for _ in range(len(cameras)):
             fname = sensor_queue.get(True, 1.0)
-            print(fname)
+            if fname is not None:
+                print(fname)
         
-        # Save ground-truth position of all road users 
-        lines = list()
-        for vehicle_id in vehicles:
-            vehicle = world.get_actor(vehicle_id)
-            loc = vehicle.get_location()
+        if is_actual_frame:
+            # Save ground-truth position of all road users 
+            lines = list()
+            for vehicle_id in vehicles:
+                vehicle = world.get_actor(vehicle_id)
+                loc = vehicle.get_location()
 
-            vehicle_type = 'car'
-            if any([bn in vehicle.type_id for bn in bus_names]):
-                vehicle_type = 'bus'
-            elif any([tn in vehicle.type_id for tn in truck_names]):
-                vehicle_type = 'truck'
-            elif vehicle.attributes['number_of_wheels'] == "2":
-                vehicle_type = 'bicyclist'
+                vehicle_type = 'car'
+                if any([bn in vehicle.type_id for bn in bus_names]):
+                    vehicle_type = 'bus'
+                elif any([tn in vehicle.type_id for tn in truck_names]):
+                    vehicle_type = 'truck'
+                elif vehicle.attributes['number_of_wheels'] == "2":
+                    vehicle_type = 'bicyclist'
+                
+                bbox = vehicle.bounding_box
+                x = bbox.extent.x*2
+                y = bbox.extent.y*2
+                z = bbox.extent.z*2
+                size_str = ','.join([str(v) for v in (x, y, z)])
+
+                line = f"{vehicle_type};{vehicle_id-first_id};{loc};{size_str}"
+                lines.append(line)
             
-            bbox = vehicle.bounding_box
-            x = bbox.extent.x*2
-            y = bbox.extent.y*2
-            z = bbox.extent.z*2
-            size_str = ','.join([str(v) for v in (x, y, z)])
+            for pedestrian in pedestrians:
+                pedestrian_id = pedestrian['id']
+                actor = world.get_actor(pedestrian_id)
+                loc = actor.get_location()
+                
+                bbox = actor.bounding_box
+                x = bbox.extent.x*2
+                y = bbox.extent.y*2
+                z = bbox.extent.z*2
+                size_str = ','.join([str(v) for v in (x, y, z)])
 
-            line = f"{vehicle_type};{vehicle_id-first_id};{loc};{size_str}"
-            lines.append(line)
-        
-        for pedestrian in pedestrians:
-            pedestrian_id = pedestrian['id']
-            actor = world.get_actor(pedestrian_id)
-            loc = actor.get_location()
+                line = f"pedestrian;{pedestrian_id-first_id};{loc};{size_str}"
+                lines.append(line)
             
-            bbox = actor.bounding_box
-            x = bbox.extent.x*2
-            y = bbox.extent.y*2
-            z = bbox.extent.z*2
-            size_str = ','.join([str(v) for v in (x, y, z)])
-
-            line = f"pedestrian;{pedestrian_id-first_id};{loc};{size_str}"
-            lines.append(line)
-        
-        (pos_folder / f"{long_str(frame_no, 6)}.txt").write_text('\n'.join(lines))
+            (pos_folder / f"{long_str(actual_frame_no, 6)}.txt").write_text('\n'.join(lines))
     
     # Cleanup before next scenario (if any)
     print("Cleaning up...")
@@ -346,12 +372,15 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
     
     print("Scenario finished!")
 
-def sensor_callback(data, sensor_queue, cam_name, start_frame, folder):
+def sensor_callback(data, sensor_queue, cam_name, start_frame, folder, frame_skip):
     frame_no = data.frame - start_frame
-    file_name = folder / cam_name / f"{frame_no}.jpg"
-    file_name.parent.mkdir(exist_ok=True)
-    data.save_to_disk(str(file_name))
-    sensor_queue.put(file_name)
+    if frame_no % frame_skip == 0:    
+        file_name = folder / cam_name / f"{frame_no//frame_skip}.jpg"
+        file_name.parent.mkdir(exist_ok=True)
+        data.save_to_disk(str(file_name))
+        sensor_queue.put(file_name)
+    else:
+        sensor_queue.put(None)
 
 # long_str(2) -> '0002'
 # long_str(42, 3) -> '042'
