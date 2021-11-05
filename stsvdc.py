@@ -310,6 +310,7 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
     for cam_no, cam_delta in enumerate(cam_setup):
         dx, dy, dz = cam_delta  
         cam_loc = base_location + dx*right + dy*up + dz*forward
+        cam_loc = carla.Location(cam_loc.x, cam_loc.y, cam_loc.z)
         
         transform = carla.Transform(cam_loc, base_rotation)
         cam = world.spawn_actor(cam_bp, transform)
