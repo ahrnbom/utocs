@@ -31,18 +31,89 @@ class Scenario:
     length:int
 
 def default_scenarios():
-    scenrarios = list()
+    scenarios = list()
 
-    s = Scenario(map='Town01', cam_pos=(101.38188171386719,183.1450958251953,7.839078903198242), cam_dir=(-24.54534149169922,130.83407592773438,4.599098247126676e-05), length=200)
-    scenrarios.append(s)
+    # 0 
+    s = Scenario(map='Town01', cam_pos=(101.38188171386719,183.1450958251953,7.839078903198242), cam_dir=(-24.54534149169922,130.83407592773438,4.599098247126676e-05), length=2000)
+    scenarios.append(s)
 
-    s = Scenario(map='Town10HD', cam_pos=(-51.66246032714844,154.75738525390625,13.823832511901855), cam_dir=(-27.47414779663086,-86.13775634765625,0.00011643866309896111), length=200)
-    scenrarios.append(s)
+    # 1 
+    s = Scenario(map='Town10HD', cam_pos=(-51.66246032714844,154.75738525390625,13.823832511901855), cam_dir=(-27.47414779663086,-86.13775634765625,0.00011643866309896111), length=2000)
+    scenarios.append(s)
 
-    s = Scenario(map='Town01', cam_pos=(323.6024475097656,185.66769409179688,10.069890975952148), cam_dir=(-32.938194274902344,55.12174987792969,3.051888779737055e-05), length=200)
-    scenrarios.append(s)
+    # 2 
+    s = Scenario(map='Town01', cam_pos=(323.6024475097656,185.66769409179688,10.069890975952148), cam_dir=(-32.938194274902344,55.12174987792969,3.051888779737055e-05), length=2000)
+    scenarios.append(s)
 
-    return scenrarios
+    # 3
+    s = Scenario(map='Town10HD', cam_pos=(-47.0649299621582,-40.33244705200195,11.453038215637207), cam_dir=(-36.29405975341797,-88.5447998046875,0.00011016575444955379), length=2000)
+    scenarios.append(s)
+
+    # 4
+    s = Scenario(map='Town10HD', cam_pos=(104.66220092773438,-8.18765640258789,8.137160301208496), cam_dir=(-25.95864486694336,97.4450912475586,0.00011489871394587681), length=2000)
+    scenarios.append(s)
+
+    # 5
+    s = Scenario(map='Town02', cam_pos=(37.02091598510742,246.881103515625,9.387005805969238), cam_dir=(-41.42270278930664,-33.86310958862305,3.529641617205925e-05), length=2000)
+    scenarios.append(s)
+
+    # 6
+    s = Scenario(map='Town02', cam_pos=(122.1256332397461,183.66986083984375,9.662296295166016), cam_dir=(-40.59231185913086,47.09394836425781,7.083312084432691e-05), length=2000)
+    scenarios.append(s)
+
+    # 7
+    s = Scenario(map='Town03', cam_pos=(-14.29495620727539,31.68166160583496,16.79800033569336), cam_dir=(-51.126773834228516,-25.994699478149414,3.4009499358944595e-05), length=2000)
+    scenarios.append(s)
+
+    # 8 
+    s = Scenario(map='Town03', cam_pos=(-99.9942626953125,13.837921142578125,18.240234375), cam_dir=(-50.94935989379883,-21.88389778137207,3.7945083022350445e-05), length=2000)
+    scenarios.append(s)
+
+    # 9
+    s = Scenario(map='Town03', cam_pos=(-156.63992309570312,-11.973634719848633,8.718941688537598), cam_dir=(-40.18968963623047,46.936527252197266,2.570556716818828e-05), length=2000)
+    scenarios.append(s)
+
+    # 10 
+    s = Scenario(map='Town04', cam_pos=(135.82525634765625,-183.5204315185547,7.379964828491211), cam_dir=(-34.587493896484375,125.46703338623047,2.385247171332594e-05), length=2000)
+    scenarios.append(s)
+
+    # 11 
+    s = Scenario(map='Town05', cam_pos=(21.694469451904297,-13.837503433227539,14.421462059020996), cam_dir=(-47.781150817871094,65.34835815429688,-2.5411281967535615e-06), length=2000)
+    scenarios.append(s)
+
+    # 12 
+    s = Scenario(map='Town05', cam_pos=(19.721576690673828,-102.66522979736328,16.00419807434082), cam_dir=(-48.494869232177734,55.754634857177734,1.5460213035112247e-05), length=2000)
+    scenarios.append(s)
+
+    # 13 
+    s = Scenario(map='Town05', cam_pos=(23.09146499633789,-128.45294189453125,7.25258731842041), cam_dir=(-26.582944869995117,-50.27110290527344,3.532379196258262e-05), length=2000)
+    scenarios.append(s)
+
+    # 14 
+    s = Scenario(map='Town01', cam_pos=(101.49712371826172,260.6474609375,6.389766693115234), cam_dir=(-27.420345306396484,-121.83832550048828,8.848871220834553e-05), length=2000)
+    scenarios.append(s)
+
+    # 15 
+    s = Scenario(map='Town01', cam_pos=(-7.876495838165283,283.81658935546875,6.7012200355529785), cam_dir=(-19.177270889282227,60.657020568847656,0.00016813207184895873), length=2000)
+    scenarios.append(s)
+
+    # 16
+    s = Scenario(map='Town02', cam_pos=(173.74713134765625,119.1712646484375,7.785608291625977), cam_dir=(-28.29818344116211,-26.61002540588379,6.108825618866831e-05), length=2000)
+    scenarios.append(s)
+
+    # 17 
+    s = Scenario(map='Town02', cam_pos=(-9.025032043457031,104.06327819824219,7.86112117767334), cam_dir=(-29.11554527282715,44.28169631958008,6.645367102464661e-05), length=2000)
+    scenarios.append(s)
+
+    # 18
+    s = Scenario(map='Town10HD', cam_pos=(-103.29410552978516,130.65997314453125,11.90080738067627), cam_dir=(-14.828025817871094,-88.15574645996094,3.797696263063699e-05), length=2000)
+    scenarios.append(s)
+
+    # 19 
+    s = Scenario(map='Town10HD', cam_pos=(-59.03020477294922,35.21854782104492,13.662759780883789), cam_dir=(-47.19268035888672,-47.13734436035156,6.533325358759612e-05), length=2000)
+    scenarios.append(s)
+
+    return scenarios
 
 def main(host:str, port:int, tm_port:int, cam_setup:list, folder:Path, scenario_number:int):
     client = carla.Client(host, port)
@@ -349,7 +420,9 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
                 line = f"pedestrian;{pedestrian_id-first_id};{loc};{size_str}"
                 lines.append(line)
             
-            (pos_folder / f"{long_str(actual_frame_no, 6)}.txt").write_text('\n'.join(lines))
+            pos_path = pos_folder / f"{long_str(actual_frame_no, 6)}.txt"
+            (pos_path).write_text('\n'.join(lines))
+            print(f"Written {pos_path}")
     
     # Cleanup before next scenario (if any)
     print("Cleaning up...")
@@ -373,9 +446,9 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
     print("Scenario finished!")
 
 def sensor_callback(data, sensor_queue, cam_name, start_frame, folder, frame_skip):
-    frame_no = data.frame - start_frame
+    frame_no = data.frame - start_frame - 1
     if frame_no % frame_skip == 0:    
-        file_name = folder / cam_name / f"{frame_no//frame_skip}.jpg"
+        file_name = folder / cam_name / f"{long_str(frame_no//frame_skip, 6)}.jpg"
         file_name.parent.mkdir(exist_ok=True)
         data.save_to_disk(str(file_name))
         sensor_queue.put(file_name)
