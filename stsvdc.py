@@ -30,6 +30,21 @@ class Scenario:
     cam_dir:tuple
     length:int
 
+@dataclass 
+class Camera:
+    obj:carla.Sensor
+    id:int
+    loc:carla.Location
+    dir:carla.Rotation
+    name:str
+    transform:carla.Transform
+
+@dataclass
+class Pedestrian:
+    id:int
+    speed:float 
+    con:int
+
 def default_scenarios():
     scenarios = list()
 
@@ -241,31 +256,32 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
         if res.error:
             raise ValueError(res.error)
         else:
-            pedestrians.append({'id': res.actor_id, 'speed': float(pedestrian_speeds[i])})
-
+            pedestrian = Pedestrian(res.actor_id, float(pedestrian_speeds[i]), con=None)
+            pedestrians.append(pedestrian)
+            
     print("Actors spawned!")
 
     batch = list()
     walker_controller_bp = world.get_blueprint_library().find('controller.ai.walker')
     for pedestrian in pedestrians:
-        batch.append(SpawnActor(walker_controller_bp, carla.Transform(), pedestrian["id"]))
+        batch.append(SpawnActor(walker_controller_bp, carla.Transform(), pedestrian.id))
     results = client.apply_batch_sync(batch, True)
     for i, res in enumerate(results):
         if res.error:
             raise ValueError(res.error)
         else:
-            pedestrians[i]['con'] = res.actor_id
+            pedestrians[i].con = res.actor_id
     
     world.tick()
 
     world.set_pedestrians_cross_factor(0.05)
     
     # Start moving pedestrians
-    controller_actors = world.get_actors([p['con'] for p in pedestrians])
+    controller_actors = world.get_actors([p.con for p in pedestrians])
     for pedestrian, actor in zip(pedestrians, controller_actors):
         actor.start()
         actor.go_to_location(world.get_random_location_from_navigation())
-        actor.set_max_speed(pedestrian['speed'])
+        actor.set_max_speed(pedestrian.speed)
 
     print(f"Spawned {len(pedestrians)} pedestrians")
 
@@ -320,12 +336,13 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
             return lambda data: sensor_callback(data, sensor_queue, cam_name, start_frame, ims_folder, frame_skip)
 
         cam.listen(closure(sensor_queue, cam_name, start_frame, ims_folder, frame_skip))
-        cameras.append({'obj': cam, 'id': cam_no, 'loc': cam_loc, 'dir': base_rotation, 'name':cam_name, 'transform': transform})
-
+        camera = Camera(cam, cam_no, cam_loc, base_rotation, cam_name, transform)
+        cameras.append(camera)
+        
     # Collect camera positions
     lines = list()
     for cam in cameras:
-        line = f"{cam['id']}:{cam['loc']};{cam['dir']}"
+        line = f"{cam.id}:{cam.loc};{cam.dir}"
         lines.append(line)
 
     f  = im_size_x /(2.0 * tan(fov * pi / 360))
@@ -342,10 +359,10 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
 
     # Collect ground points
     camera = cameras[0]
-    cam_t = camera['transform']
+    cam_t = camera.transform
     forward = vector_normalize(cam_t.get_forward_vector())
-    ground_dist = camera['loc'].z / abs(forward.z) # how far we should walk until we hit ground plane (z=0)
-    ground_pos = camera['loc'] + ground_dist*forward 
+    ground_dist = camera.loc.z / abs(forward.z) # how far we should walk until we hit ground plane (z=0)
+    ground_pos = camera.loc + ground_dist*forward 
     n_points = 500
     sqrt_n_points = int(round(sqrt(n_points)))
     ground_range = 50 # in metres
@@ -367,6 +384,7 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
     (scenario_folder / 'ground_points.txt').write_text('\n'.join(ground_lines))
 
     # Start recording video
+    max_dist_to_include = 100 # in metres
     for frame_no in range(scenario.length*frame_skip):
         # Tick the server
         world.tick()
@@ -384,11 +402,15 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
                 print(fname)
         
         if is_actual_frame:
-            # Save ground-truth position of all road users 
+            # Save ground-truth position of all nearby road users 
             lines = list()
             for vehicle_id in vehicles:
                 vehicle = world.get_actor(vehicle_id)
                 loc = vehicle.get_location()
+
+                # Ignore those too far away
+                if loc_dist(loc, cameras[0].loc) > max_dist_to_include:
+                    continue
 
                 vehicle_type = 'car'
                 if any([bn in vehicle.type_id for bn in bus_names]):
@@ -408,10 +430,14 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
                 lines.append(line)
             
             for pedestrian in pedestrians:
-                pedestrian_id = pedestrian['id']
+                pedestrian_id = pedestrian.id
                 actor = world.get_actor(pedestrian_id)
                 loc = actor.get_location()
                 
+                # Ignore those too far away
+                if loc_dist(loc, cameras[0].loc) > max_dist_to_include:
+                    continue
+
                 bbox = actor.bounding_box
                 x = bbox.extent.x*2
                 y = bbox.extent.y*2
@@ -432,16 +458,16 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
     time.sleep(0.2)
 
     for camera in cameras:
-        camera['obj'].stop()
+        camera.obj.stop()
     time.sleep(0.2)
     
     client.apply_batch([carla.command.DestroyActor(v_id) for v_id in vehicles])
     time.sleep(0.2)
     
-    client.apply_batch([carla.command.DestroyActor(pedestrian['con']) for pedestrian in pedestrians])
+    client.apply_batch([carla.command.DestroyActor(pedestrian.con) for pedestrian in pedestrians])
     time.sleep(0.2)
     
-    client.apply_batch([carla.command.DestroyActor(pedestrian['id']) for pedestrian in pedestrians])
+    client.apply_batch([carla.command.DestroyActor(pedestrian.id) for pedestrian in pedestrians])
     time.sleep(0.2)
     
     print("Scenario finished!")
