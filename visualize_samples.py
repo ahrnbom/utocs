@@ -161,64 +161,72 @@ def read_positions(pos_path:Path):
     
     return instances
 
-def main(folder:Path, i:int):
+def main(folder:Path, cam_index:int):
     all_scenarios = [f for f in (folder / 'scenarios').glob('*') if f.is_dir()]
-    scenario = choice(all_scenarios)
+    for scenario in all_scenarios:
+        visualize_scenario(scenario, folder / 'visualization', cam_index)
 
+def visualize_scenario(scenario:Path, out_folder:Path, cam_index:int):
     all_positions = [f for f in (scenario / 'positions').glob('*.txt') if f.is_file()]
-    pos_path = choice(all_positions)
-
-    instances = read_positions(pos_path)
-
-    all_cams = [f for f in (scenario / 'images').glob('cam*') if f.is_dir()]
-    cam = choice(all_cams)
-
-    projection_matrices = build_camera_matrices(scenario)
-    cam_num = good_lstrip(cam.name, 'cam')
-    proj_matrix = projection_matrices[cam_num]
-
-    ground_points = np.genfromtxt(scenario / 'ground_points.txt', delimiter=',', dtype=np.float32).T
-    n = ground_points.shape[1]
-    new_ground = np.ones((4, n), dtype=np.float32)
-    new_ground[0:3, :] = ground_points
-
-    im = iio.imread(cam / f"{pos_path.stem}.jpg")
-
-    proj_ground = proj_matrix @ new_ground
-    for i_ground in range(n):
-        ground_point = pflat(proj_ground[:, i_ground])
-        x = intr(ground_point[0])
-        y = intr(ground_point[1])
-        cv2.drawMarker(im, (x, y), (255,0,128), cv2.MARKER_CROSS, 4, 2, cv2.LINE_AA)
+    all_positions.sort(key=lambda f: int(f.stem))
     
-    for instance in instances:
-        X = instance['X']
-        ru_type = instance['type']
-        ru_id = instance['id']
+    n_frames = len(all_positions)
 
-        pos2D = pflat(proj_matrix @ X)
-        x, y, _ = pos2D
-        x = intr(x)
-        y = intr(y)
-
-        if x >= 0 and x <= 1280 and y >= 0 and y <= 720:
-            cv2.drawMarker(im, (x,y), (0,255,255), cv2.MARKER_TRIANGLE_UP, 8, 2, cv2.LINE_AA)
-            cv2.putText(im, f"{ru_type}{ru_id}", (x,y), cv2.FONT_HERSHEY_PLAIN, 1.5, (0,0,0), 2, cv2.LINE_AA)
-            cv2.putText(im, f"{ru_type}{ru_id}", (x,y), cv2.FONT_HERSHEY_PLAIN, 1.5, (255,255,255), 1, cv2.LINE_AA)
-
-    out_folder = folder / 'visualization'
     out_folder.mkdir(exist_ok=True)
+    with iio.get_writer(out_folder / f"{scenario.name}.mp4", fps=33) as vid:
+        for pos_path in all_positions:
+            frame_no = int(pos_path.stem)
+            instances = read_positions(pos_path)
 
-    iio.imwrite(out_folder / f"{i}.jpg", im)
-    print(f"Written example image {i}")
+            all_cams = [f for f in (scenario / 'images').glob('cam*') if f.is_dir()]
+            all_cams.sort(key=lambda f: int(good_lstrip(f.name, 'cam')))
+            cam = all_cams[cam_index]
 
+            projection_matrices = build_camera_matrices(scenario)
+            cam_num = good_lstrip(cam.name, 'cam')
+            proj_matrix = projection_matrices[cam_num]
+
+            ground_points = np.genfromtxt(scenario / 'ground_points.txt', delimiter=',', dtype=np.float32).T
+            n = ground_points.shape[1]
+            new_ground = np.ones((4, n), dtype=np.float32)
+            new_ground[0:3, :] = ground_points
+
+            im = iio.imread(cam / f"{pos_path.stem}.jpg")
+
+            proj_ground = proj_matrix @ new_ground
+            for i_ground in range(n):
+                ground_point = pflat(proj_ground[:, i_ground])
+                x = intr(ground_point[0])
+                y = intr(ground_point[1])
+                cv2.drawMarker(im, (x, y), (255,0,128), cv2.MARKER_CROSS, 4, 2, cv2.LINE_AA)
+            
+            for instance in instances:
+                X = instance['X']
+                ru_type = instance['type']
+                ru_id = instance['id']
+
+                pos2D = pflat(proj_matrix @ X)
+                x, y, _ = pos2D
+                x = intr(x)
+                y = intr(y)
+
+                if x >= 0 and x <= 1280 and y >= 0 and y <= 720:
+                    cv2.drawMarker(im, (x,y), (0,255,255), cv2.MARKER_TRIANGLE_UP, 8, 2, cv2.LINE_AA)
+                    cv2.putText(im, f"{ru_type}{ru_id}", (x,y), cv2.FONT_HERSHEY_PLAIN, 1.5, (0,0,0), 2, cv2.LINE_AA)
+                    cv2.putText(im, f"{ru_type}{ru_id}", (x,y), cv2.FONT_HERSHEY_PLAIN, 1.5, (255,255,255), 1, cv2.LINE_AA)
+
+            cv2.putText(im, f"Frame {frame_no}", (10, 20), cv2.FONT_HERSHEY_PLAIN, 1.5, (0,0,0), 2, cv2.LINE_AA)
+            cv2.putText(im, f"Frame {frame_no}", (10, 20), cv2.FONT_HERSHEY_PLAIN, 1.5, (255,255,255), 1, cv2.LINE_AA)
+            
+            vid.append_data(im)
+            if frame_no%20 == 0:
+                print(f"{frame_no} / {n_frames} ({100*frame_no/n_frames:.1f}%) scenario: {scenario.name}")
 
 if __name__ == "__main__":
     args = argparse.ArgumentParser()
     args.add_argument("--folder", help="Where the data is located", default="./output")
-    args.add_argument("--iters", default=10, type=int, help="How many random images to visualize")
+    args.add_argument("--cam", help="Which camera (default: 0)", type=int, default=0)
     args = args.parse_args()
     folder = Path(args.folder)
-
-    for i in range(args.iters):
-        main(folder, i)
+    cam_index = args.cam
+    main(folder, cam_index)
