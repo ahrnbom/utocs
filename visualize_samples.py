@@ -173,7 +173,7 @@ def visualize_scenario(scenario:Path, out_folder:Path, cam_index:int):
     n_frames = len(all_positions)
 
     out_folder.mkdir(exist_ok=True)
-    with iio.get_writer(out_folder / f"{scenario.name}.mp4", fps=33) as vid:
+    with iio.get_writer(out_folder / f"{scenario.name}.mp4", fps=25) as vid:
         for pos_path in all_positions:
             frame_no = int(pos_path.stem)
             instances = read_positions(pos_path)

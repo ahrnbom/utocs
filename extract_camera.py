@@ -10,7 +10,7 @@ import time
 from stsvdc import loc_dist
 
 host = '127.0.0.1'
-port = 2000
+port = 4000
 client = carla.Client(host, port)
 client.set_timeout(10.0)
 
