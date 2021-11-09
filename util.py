@@ -19,3 +19,23 @@ def long_str(i:int, N:int=4):
         s = '0'*(N-n) + s 
     
     return s 
+
+# Removes 'intro' from left part of 'text', raises error if not found
+def good_lstrip(text, intro):
+    assert(len(intro) <= len(text))
+    l = len(intro)
+    first = text[:l]
+    assert(first == intro)
+
+    return text[l:]
+
+def intr(x):
+    return int(round(float(x)))
+
+# Projective flattening, scales homogeneous coordinates so that last coordinate is always one
+def pflat(x):
+    if len(x.shape) == 1:
+        x /= x[-1]
+    else:
+        x /= x[-1, :]
+    return x

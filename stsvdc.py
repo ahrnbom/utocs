@@ -338,7 +338,7 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
     (scenario_folder / 'camera_calibration.txt').write_text('\n'.join(lines))
 
     bus_names = ('volkswagen.t2', )
-    truck_names = ('carlamotors.firetruck', 'ford.ambulance', 'mercedes.sprinter', 'tesla.cybertruck')
+    truck_names = ('carlamotors.firetruck', 'ford.ambulance', 'mercedes.sprinter', 'tesla.cybertruck', 'carlamotors.carlacola')
 
     first_id = min(vehicles)
 

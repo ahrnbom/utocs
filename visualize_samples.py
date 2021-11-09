@@ -11,10 +11,10 @@ import cv2
 import imageio as iio 
 import numpy as np 
 import argparse
-from random import choice 
-
 import numpy as np
 from scipy.linalg import null_space
+
+from util import good_lstrip, pflat, intr
 
 def set_from_string(some_dict, text):
     name, value = text.split('=')
@@ -112,24 +112,6 @@ def build_cam(values):
     return P, K
 
 
-def good_lstrip(text, intro):
-    assert(len(intro) <= len(text))
-    l = len(intro)
-    first = text[:l]
-    assert(first == intro)
-
-    return text[l:]
-
-def intr(x):
-    return int(round(float(x)))
-
-def pflat(x):
-    if len(x.shape) == 1:
-        x /= x[-1]
-    else:
-        x /= x[-1, :]
-    return x
-
 def euler_angles(phi, theta, psi):
     sin = np.sin
     cos = np.cos
@@ -137,6 +119,7 @@ def euler_angles(phi, theta, psi):
          [cos(theta)*sin(psi), cos(phi)*cos(psi)+sin(phi)*sin(theta)*sin(psi), -sin(phi)*cos(psi)+cos(phi)*sin(theta)*sin(psi)],
          [-sin(theta),            sin(phi)*cos(theta),             cos(phi)*cos(theta)]]
     return np.array(R, dtype=np.float32)
+
 
 def read_positions(pos_path:Path):
     text = pos_path.read_text()
@@ -161,10 +144,13 @@ def read_positions(pos_path:Path):
     
     return instances
 
+
 def main(folder:Path, cam_index:int):
     all_scenarios = [f for f in (folder / 'scenarios').glob('*') if f.is_dir()]
+    all_scenarios.sort()
     for scenario in all_scenarios:
         visualize_scenario(scenario, folder / 'visualization', cam_index)
+
 
 def visualize_scenario(scenario:Path, out_folder:Path, cam_index:int):
     all_positions = [f for f in (scenario / 'positions').glob('*.txt') if f.is_file()]
@@ -221,6 +207,7 @@ def visualize_scenario(scenario:Path, out_folder:Path, cam_index:int):
             vid.append_data(im)
             if frame_no%20 == 0:
                 print(f"{frame_no} / {n_frames} ({100*frame_no/n_frames:.1f}%) scenario: {scenario.name}")
+
 
 if __name__ == "__main__":
     args = argparse.ArgumentParser()
