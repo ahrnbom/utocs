@@ -20,6 +20,6 @@ To be decided...
 ### Instructions
 1. Install Carla Simulator 0.9.12, both the Python package and the server
 1. Start the server with `./CarlaUE4.sh` in the appropriate folder
-1. Install Python dependencies with `python3 -m pip install carla`, or to include the optional dependencies for visualization do instead `python3 -m pip install carla imageio imageio-ffmpeg opencv-python`
+1. Install Python dependencies with `python3 -m pip install carla==0.9.12`, or to include the optional dependencies for visualization do instead `python3 -m pip install carla==0.9.12 imageio imageio-ffmpeg opencv-python`
 1. While the server is running, execute `python3 start.py`. Use the `-h` flag to see options.
 1. To run the optional visualization, run `python3 visualize_samples.py`. Again, use `-h` to see options.
