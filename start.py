@@ -13,7 +13,7 @@ def main(args):
     start, stop = [int(v) for v in scenario_string.split('-')]
 
     for s_num in range(start, stop+1):
-        command = [sys.executable, 'stsvdc.py', '--host', host, '--port', port, '--tm_port', tm_port, '--cam_setup', cam_setup, '--folder', folder, '--scenario_number', str(s_num)]
+        command = [sys.executable, 'stics.py', '--host', host, '--port', port, '--tm_port', tm_port, '--cam_setup', cam_setup, '--folder', folder, '--scenario_number', str(s_num)]
         print(command)
         p = subprocess.Popen(command, shell=False)
         result = p.wait()
