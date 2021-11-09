@@ -9,7 +9,7 @@ The following road user classes are supported:
 1. Trucks
 1. Buses
 
-The videos are stored as 720p .jpg files, as 25 FPS videos. By default, monocular videos are generated, but an option exists for stereo/trinocular or even more cameras through the `--cam_setup` parameter. 
+The videos are stored as 720p .jpg files, as 25 FPS videos. By default, monocular videos are generated, but an option exists for stereo/trinocular or even more cameras through the `--cam_setup` parameter. There are 24 sequences, each 4000 frames long. These are divided into training/validation/test sets, see `sets.txt`.
 
 ### License
 To be decided...

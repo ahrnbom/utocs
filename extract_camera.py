@@ -10,12 +10,12 @@ import time
 from stsvdc import loc_dist
 
 host = '127.0.0.1'
-port = 4000
+port = 2000
 client = carla.Client(host, port)
 client.set_timeout(10.0)
 
 args = argparse.ArgumentParser()
-args.add_argument("--map", type=str, default="Town10")
+args.add_argument("--map", type=str, default="Town10HD")
 args = args.parse_args()
 map_name = args.map
 
@@ -25,7 +25,7 @@ time.sleep(1.0)
 world = client.get_world()
 
 old_pos = None 
-def_length = 2000
+def_length = 4000
 while True:
     transform = world.get_spectator().get_transform()
     pos = transform.location
