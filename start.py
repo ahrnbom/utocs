@@ -1,6 +1,7 @@
 import sys
 import subprocess
 import argparse
+from pathlib import Path
 
 def main(args):
     host = args.host
@@ -8,6 +9,11 @@ def main(args):
     tm_port = args.tm_port
     cam_setup = args.cam_setup
     folder = args.folder 
+
+    # Copy over the file sets.txt, to make it easier for methods using UTOCS to use it 
+    sets_text = Path('sets.txt').read_text()
+    new_sets_file = Path(folder) / 'sets.txt'
+    new_sets_file.write_text(sets_text)
 
     scenario_string = args.range
     start, stop = [int(v) for v in scenario_string.split('-')]
