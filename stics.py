@@ -289,9 +289,9 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
     traffic_manager.global_percentage_speed_difference(30.0)
 
     print("Stabilizing world...")
-    for _ in range(100):
+    for _ in range(150):
         world.tick()
-        time.sleep(0.005)
+        time.sleep(0.01)
 
     print("World stabilized")
 
