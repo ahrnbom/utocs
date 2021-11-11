@@ -15,7 +15,7 @@ def vector_normalize(v:carla.Vector3D):
 def long_str(i:int, N:int=4):
     s = str(i)
     n = len(s)
-    if n < 4:
+    if n < N:
         s = '0'*(N-n) + s 
     
     return s 
