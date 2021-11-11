@@ -494,7 +494,7 @@ def main(host:str, port:int, tm_port:int, cam_setup:list, folder:Path, scenario_
 
     scenarios = default_scenarios()
     scenario = scenarios[scenario_number]
-    print(f"Starting scenario {scenario_number+1} / {len(scenarios)}")
+    print(f"Starting scenario {scenario_number}")
     run_scenario(client, traffic_manager, cam_setup, scenario, scenario_number, folder)
 
 
