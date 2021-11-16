@@ -8,18 +8,20 @@ def main(args):
     port = args.port
     tm_port = args.tm_port
     cam_setup = args.cam_setup
-    folder = args.folder 
+    folder_str = args.folder 
 
     # Copy over the file sets.txt, to make it easier for methods using UTOCS to use it 
+    folder = Path(folder_str)
+    folder.mkdir(exist_ok=True, parents=True)
     sets_text = Path('sets.txt').read_text()
-    new_sets_file = Path(folder) / 'sets.txt'
+    new_sets_file = folder / 'sets.txt'
     new_sets_file.write_text(sets_text)
 
     scenario_string = args.range
     start, stop = [int(v) for v in scenario_string.split('-')]
 
     for s_num in range(start, stop+1):
-        command = [sys.executable, 'utocs.py', '--host', host, '--port', port, '--tm_port', tm_port, '--cam_setup', cam_setup, '--folder', folder, '--scenario_number', str(s_num)]
+        command = [sys.executable, 'utocs.py', '--host', host, '--port', port, '--tm_port', tm_port, '--cam_setup', cam_setup, '--folder', folder_str, '--scenario_number', str(s_num)]
         print(command)
         p = subprocess.Popen(command, shell=False)
         result = p.wait()
