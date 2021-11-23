@@ -11,6 +11,7 @@ import time
 from dataclasses import dataclass
 from queue import Queue
 from math import tan, pi, sqrt
+import json
 
 import carla
 from carla import VehicleLightState as vls
@@ -404,7 +405,7 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
         
         if is_actual_frame:
             # Save ground-truth position of all nearby road users 
-            lines = list()
+            objs = list()
             for vehicle_id in vehicles:
                 vehicle = world.get_actor(vehicle_id)
                 loc = vehicle.get_location()
@@ -422,13 +423,20 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
                     vehicle_type = 'bicyclist'
                 
                 bbox = vehicle.bounding_box
-                x = bbox.extent.x*2
-                y = bbox.extent.y*2
-                z = bbox.extent.z*2
-                size_str = ','.join([str(v) for v in (x, y, z)])
+                l = bbox.extent.x*2
+                w = bbox.extent.y*2
+                h = bbox.extent.z*2
 
-                line = f"{vehicle_type};{vehicle_id-first_id};{loc};{size_str}"
-                lines.append(line)
+                v = vehicle.get_velocity()
+                rot = vehicle.get_transform().rotation
+                forward = rot.get_forward_vector()
+
+                objs.append({'type': vehicle_type, 'id': vehicle_id-first_id,
+                             'x': loc.x, 'y': loc.y, 'z': loc.z, 'l': l, 'w': w,
+                             'h': h, 'v_x': v.x, 'v_y': v.y, 'v_z': v.z,
+                             'pitch': rot.pitch, 'roll': rot.roll, 'yaw': rot.yaw, 
+                             'forward_x': forward.x, 'forward_y': forward.y, 
+                             'forward_z': forward.z})
             
             for pedestrian in pedestrians:
                 pedestrian_id = pedestrian.id
@@ -440,16 +448,23 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
                     continue
 
                 bbox = actor.bounding_box
-                x = bbox.extent.x*2
-                y = bbox.extent.y*2
-                z = bbox.extent.z*2
-                size_str = ','.join([str(v) for v in (x, y, z)])
+                l = bbox.extent.x*2
+                w = bbox.extent.y*2
+                h = bbox.extent.z*2
+                
+                v = actor.get_velocity()
+                rot = actor.get_transform().rotation
+                forward = rot.get_forward_vector()
 
-                line = f"pedestrian;{pedestrian_id-first_id};{loc};{size_str}"
-                lines.append(line)
+                objs.append({'type': 'pedestrian', 'id': pedestrian_id-first_id,
+                             'x': loc.x, 'y': loc.y, 'z': loc.z, 'l': l, 'w': w,
+                             'h': h, 'v_x': v.x, 'v_y': v.y, 'v_z': v.z,
+                             'pitch': rot.pitch, 'roll': rot.roll, 'yaw': rot.yaw, 
+                             'forward_x': forward.x, 'forward_y': forward.y, 
+                             'forward_z': forward.z})
             
-            pos_path = pos_folder / f"{long_str(actual_frame_no, 6)}.txt"
-            (pos_path).write_text('\n'.join(lines))
+            pos_path = pos_folder / f"{long_str(actual_frame_no, 6)}.json"
+            (pos_path).write_text(json.dumps(objs, indent=2))
             print(f"Written {pos_path}")
     
     # Cleanup before next scenario (if any)
