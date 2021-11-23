@@ -342,17 +342,20 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
         cameras.append(camera)
         
     # Collect camera positions
-    lines = list()
+    cams_obj = dict()
+    cam_obj_list = list()
     for cam in cameras:
-        line = f"{cam.id}:{cam.loc};{cam.dir}"
-        lines.append(line)
+        cam_obj = {'id': cam.id, 'x':cam.loc.x, 'y':cam.loc.y, 'z':cam.loc.z,
+                   'pitch': cam.dir.pitch, 'roll': cam.dir.roll, 'yaw': cam.dir.yaw}
+        cam_obj_list.append(cam_obj)
 
     f  = im_size_x /(2.0 * tan(fov * pi / 360))
     Cx = im_size_x / 2.0
     Cy = im_size_y / 2.0
-    lines.append(f"Intrinsics: f={f}, Cx={Cx}, Cy={Cy}")
+    cams_obj['instrinsics'] = {'f':f, 'Cx': Cx, 'Cy':Cy}
+    cams_obj['cams'] = cam_obj_list 
 
-    (scenario_folder / 'camera_calibration.txt').write_text('\n'.join(lines))
+    (scenario_folder / 'cameras.json').write_text(json.dumps(cams_obj, indent=2))
 
     bus_names = ('volkswagen.t2', )
     truck_names = ('carlamotors.firetruck', 'ford.ambulance', 'mercedes.sprinter', 'tesla.cybertruck', 'carlamotors.carlacola')
@@ -456,8 +459,11 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
                 rot = actor.get_transform().rotation
                 forward = rot.get_forward_vector()
 
+                # Pedestrians' z value is at their middle height for some reason
+                ped_z = loc.z - h/2.0
+
                 objs.append({'type': 'pedestrian', 'id': pedestrian_id-first_id,
-                             'x': loc.x, 'y': loc.y, 'z': loc.z, 'l': l, 'w': w,
+                             'x': loc.x, 'y': loc.y, 'z': ped_z, 'l': l, 'w': w,
                              'h': h, 'v_x': v.x, 'v_y': v.y, 'v_z': v.z,
                              'pitch': rot.pitch, 'roll': rot.roll, 'yaw': rot.yaw, 
                              'forward_x': forward.x, 'forward_y': forward.y, 

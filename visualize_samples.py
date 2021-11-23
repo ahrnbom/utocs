@@ -13,51 +13,25 @@ import numpy as np
 import argparse
 import numpy as np
 from scipy.linalg import null_space
+import json
 
 from util import good_lstrip, pflat, intr
 
-def set_from_string(some_dict, text):
-    name, value = text.split('=')
-    some_dict[name] = float(value)
-    return some_dict
-
 def build_camera_matrices(folder:Path, output_K=False):
-    txt_path = folder / 'camera_calibration.txt'
+    txt_path = folder / 'cameras.json'
     text = txt_path.read_text()
-    
-    lines = [x for x in text.split('\n') if x]
-    intrinsics_line = lines[-1]
-    cam_lines = lines[:-1]
-
-    intrinsics_splot = good_lstrip(intrinsics_line, 'Intrinsics: ').split(', ')
-    base_values = dict()
-    for i in range(3):
-        base_values = set_from_string(base_values, intrinsics_splot[i])
-    assert('f'  in base_values)
-    assert('Cx' in base_values)
-    assert('Cy' in base_values)
+    cams_obj = json.loads(text)
+    f = cams_obj['instrinsics']['f']
+    Cx = cams_obj['instrinsics']['Cx']
+    Cy = cams_obj['instrinsics']['Cy']
 
     cameras = dict()
-    for line in cam_lines:
-        values = dict()
-        values.update(base_values)
-
-        cam_id = line.split(':')[0]
-        new_line = good_lstrip(line, f"{cam_id}:")
-        splot = new_line.split(';')
-        loc_str = good_lstrip(splot[0], 'Location(').rstrip(')')
-        loc_splot = loc_str.split(', ')
-        for i in range(3):
-            values = set_from_string(values, loc_splot[i])
+    for cam in cams_obj['cams']:
+        values = {'f':f, 'Cx':Cx, 'Cy':Cy}
+        for key in ('x', 'y', 'z', 'pitch', 'roll', 'yaw'):
+            values[key] = cam[key]
         
-        rot_str = good_lstrip(splot[1], 'Rotation(').rstrip(')')
-        rot_splot = rot_str.split(', ')
-        for i in range(3):
-            values = set_from_string(values, rot_splot[i])
-        
-        for name in ['x', 'y', 'z', 'pitch', 'roll', 'yaw']:
-            assert(name in values)
-        
+        cam_id = int(cam['id'])
         P, K = build_cam(values)
         cameras[cam_id] = P
     
@@ -123,25 +97,14 @@ def euler_angles(phi, theta, psi):
 
 def read_positions(pos_path:Path):
     text = pos_path.read_text()
-    lines = [x for x in text.split('\n') if x]
-
-    instances = list()
-
-    for line in lines:
-        splot = line.split(';')
-        ru_type = splot[0]
-        track_id = int(splot[1])
-        loc_str = good_lstrip(splot[2], 'Location(').rstrip(')')
-
-        xs, ys, zs = loc_str.split(', ')
-        x = float(good_lstrip(xs, 'x='))
-        y = float(good_lstrip(ys, 'y='))
-        z = float(good_lstrip(zs, 'z='))
-        X = np.array([x, y, z, 1], dtype=np.float32).reshape((4,1))
-
-        instance = {'X': X, 'type': ru_type, 'id': track_id}
-        instances.append(instance)
-    
+    instances = json.loads(text)
+    for instance in instances:
+        x = instance['x']
+        y = instance['y']
+        z = instance['z']
+        X = np.array([x, y, z, 1], dtype=np.float32)
+        instance['X'] = X
+        # X is used to make it easy to project into cameras
     return instances
 
 
@@ -153,7 +116,7 @@ def main(folder:Path, cam_index:int):
 
 
 def visualize_scenario(scenario:Path, out_folder:Path, cam_index:int):
-    all_positions = [f for f in (scenario / 'positions').glob('*.txt') if f.is_file()]
+    all_positions = [f for f in (scenario / 'positions').glob('*.json') if f.is_file()]
     all_positions.sort(key=lambda f: int(f.stem))
     
     n_frames = len(all_positions)
@@ -169,7 +132,7 @@ def visualize_scenario(scenario:Path, out_folder:Path, cam_index:int):
             cam = all_cams[cam_index]
 
             projection_matrices = build_camera_matrices(scenario)
-            cam_num = good_lstrip(cam.name, 'cam')
+            cam_num = int(good_lstrip(cam.name, 'cam'))
             proj_matrix = projection_matrices[cam_num]
 
             ground_points = np.genfromtxt(scenario / 'ground_points.txt', delimiter=',', dtype=np.float32).T
@@ -184,12 +147,21 @@ def visualize_scenario(scenario:Path, out_folder:Path, cam_index:int):
                 ground_point = pflat(proj_ground[:, i_ground])
                 x = intr(ground_point[0])
                 y = intr(ground_point[1])
-                cv2.drawMarker(im, (x, y), (255,0,128), cv2.MARKER_CROSS, 4, 2, cv2.LINE_AA)
+                cv2.drawMarker(im, (x, y), (255,0,128), cv2.MARKER_STAR, 4, 2, cv2.LINE_AA)
             
+            up = np.array([0.0, 0.0, 1.0, 0.0], dtype=np.float32)
+
             for instance in instances:
                 X = instance['X']
                 ru_type = instance['type']
                 ru_id = instance['id']
+
+                l, w, h = [instance[key] for key in "lwh"]
+                fx, fy, fz = [instance[key] for key in ['forward_x', 'forward_y', 'forward_z']]
+                forward = np.array([fx, fy, fz, 0.0], dtype=np.float32)
+                
+                right = np.cross(forward[0:3], up[0:3])
+                right = np.array([*right, 0.0], dtype=np.float32)
 
                 pos2D = pflat(proj_matrix @ X)
                 x, y, _ = pos2D
@@ -197,9 +169,11 @@ def visualize_scenario(scenario:Path, out_folder:Path, cam_index:int):
                 y = intr(y)
 
                 if x >= 0 and x <= 1280 and y >= 0 and y <= 720:
-                    cv2.drawMarker(im, (x,y), (0,255,255), cv2.MARKER_TRIANGLE_UP, 8, 2, cv2.LINE_AA)
+                    cv2.drawMarker(im, (x,y), (0,255,255), cv2.MARKER_CROSS, 8, 2, cv2.LINE_AA)
                     cv2.putText(im, f"{ru_type}{ru_id}", (x,y), cv2.FONT_HERSHEY_PLAIN, 1.5, (0,0,0), 2, cv2.LINE_AA)
                     cv2.putText(im, f"{ru_type}{ru_id}", (x,y), cv2.FONT_HERSHEY_PLAIN, 1.5, (255,255,255), 1, cv2.LINE_AA)
+
+                    draw3Dbox(im, proj_matrix, X, l, w, h, forward, right, up)
 
             cv2.putText(im, f"Frame {frame_no}", (10, 20), cv2.FONT_HERSHEY_PLAIN, 1.5, (0,0,0), 2, cv2.LINE_AA)
             cv2.putText(im, f"Frame {frame_no}", (10, 20), cv2.FONT_HERSHEY_PLAIN, 1.5, (255,255,255), 1, cv2.LINE_AA)
@@ -208,6 +182,44 @@ def visualize_scenario(scenario:Path, out_folder:Path, cam_index:int):
             if frame_no%20 == 0:
                 print(f"{frame_no} / {n_frames} ({100*frame_no/n_frames:.1f}%) scenario: {scenario.name}")
 
+def draw3Dbox(im, P, X, l, w, h, forward, right, up):
+    points3D = list()
+    for il in (-0.5, 0.5):
+        dl = il * l * forward 
+        for iw in (-0.5, 0.5):
+            dw = iw * w * right 
+            for ih in (0.0, 1.0):
+                dh = ih * h * up 
+                point3D = X + dl + dw + dh 
+                points3D.append(point3D)
+
+    for indices in [(0,1,3,2), (4,5,7,6), (0,4,5,1), (2,6,7,3), (0,4,6,2), (1,5,7,3)]:
+        p1 = points3D[indices[0]]
+        p2 = points3D[indices[1]]
+        p3 = points3D[indices[2]]
+        p4 = points3D[indices[3]]
+
+        for pair in [(p1, p2), (p2, p3), (p3, p4), (p4, p1)]:
+            a, b = pair 
+            
+            a2D = pflat(P @ a)
+            ax, ay, _ = a2D
+            ax = intr(ax)
+            ay = intr(ay)
+
+            b2D = pflat(P @ b)
+            bx, by, _ = b2D
+            bx = intr(bx)
+            by = intr(by)
+            cv2.line(im, (ax, ay), (bx, by), (100,255,100), 1, cv2.LINE_AA)
+
+    # Show forward direction
+    Xf = X + l/2.0 * forward 
+    Xf2D = pflat(P @ Xf)
+    xf, yf, _ = Xf2D
+    xf = intr(xf)
+    yf = intr(yf)
+    cv2.drawMarker(im, (xf, yf), (255,0,0), cv2.MARKER_TRIANGLE_UP, 8, 2, cv2.LINE_AA)
 
 if __name__ == "__main__":
     args = argparse.ArgumentParser()
