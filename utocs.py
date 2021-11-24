@@ -16,7 +16,7 @@ import json
 import carla
 from carla import VehicleLightState as vls
 
-from util import loc_dist, vector_normalize, long_str
+from util import loc_dist, vector_normalize, long_str, vector_from_to, scalar_product
 
 @dataclass
 class Scenario:
@@ -144,7 +144,6 @@ def default_scenarios():
 
 def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, scenario_number:int, 
                  folder:Path, frame_skip:int=5):
-
     client.load_world(scenario.map)
     time.sleep(5.0)
     print(f"Loaded map {scenario.map}") 
@@ -382,7 +381,13 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
             if point is not None:
                 loc = point.location
                 if abs(loc.z) < 2.0: # any further up and we assume they're not on the actual ground 
-                    ground_points.append(loc)
+
+                    # Check if visible in camera
+                    to_loc = vector_from_to(camera.loc, loc)
+                    to_loc = vector_normalize(to_loc)
+                    sp = scalar_product(to_loc, forward)
+                    if sp > 0.0:
+                        ground_points.append(loc)
 
     # Store ground points in file 
     ground_lines = [f"{point.x},{point.y},{point.z}" for point in ground_points]

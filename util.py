@@ -10,6 +10,15 @@ def vector_normalize(v:carla.Vector3D):
     new = carla.Vector3D(x=v.x/norm, y=v.y/norm, z=v.z/norm)
     return new 
 
+def vector_from_to(a:carla.Vector3D, b:carla.Vector3D):
+    dx = b.x - a.x
+    dy = b.y - a.y
+    dz = b.z - a.z
+    return carla.Vector3D(dx, dy, dz)
+
+def scalar_product(a:carla.Vector3D, b:carla.Vector3D):
+    return a.x*b.x + a.y*b.y + a.z*b.z
+
 # long_str(2) -> '0002'
 # long_str(42, 3) -> '042'
 def long_str(i:int, N:int=4):

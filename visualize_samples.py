@@ -148,6 +148,9 @@ def visualize_scenario(scenario:Path, out_folder:Path, cam_index:int):
                 x = intr(ground_point[0])
                 y = intr(ground_point[1])
                 cv2.drawMarker(im, (x, y), (255,0,128), cv2.MARKER_STAR, 4, 2, cv2.LINE_AA)
+                
+                # To number the ground points:
+                #cv2.putText(im, str(i_ground), (x,y+10), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255), 1, cv2.LINE_AA)
             
             up = np.array([0.0, 0.0, 1.0, 0.0], dtype=np.float32)
 
