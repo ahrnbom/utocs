@@ -364,9 +364,9 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
     # Collect ground points
     camera = cameras[0]
     cam_t = camera.transform
-    forward = vector_normalize(cam_t.get_forward_vector())
-    ground_dist = camera.loc.z / abs(forward.z) # how far we should walk until we hit ground plane (z=0)
-    ground_pos = camera.loc + ground_dist*forward 
+    cam_forward = vector_normalize(cam_t.get_forward_vector())
+    ground_dist = camera.loc.z / abs(cam_forward.z) # how far we should walk until we hit ground plane (z=0)
+    ground_pos = camera.loc + ground_dist*cam_forward 
     n_points = 1000
     sqrt_n_points = int(round(sqrt(n_points)))
     ground_range = 80 # in metres
@@ -385,7 +385,7 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
                     # Check if visible in camera
                     to_loc = vector_from_to(camera.loc, loc)
                     to_loc = vector_normalize(to_loc)
-                    sp = scalar_product(to_loc, forward)
+                    sp = scalar_product(to_loc, cam_forward)
                     if sp > 0.0:
                         ground_points.append(loc)
 
@@ -421,6 +421,13 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
                 # Ignore those too far away
                 if loc_dist(loc, cameras[0].loc) > max_dist_to_include:
                     continue
+                    
+                # Ignore if not visible in camera
+                to_loc = vector_from_to(cameras[0].loc, loc)
+                to_loc = vector_normalize(to_loc)
+                sp = scalar_product(to_loc, cam_forward)
+                if sp < 0.0:
+                    continue
 
                 vehicle_type = 'car'
                 if any([bn in vehicle.type_id for bn in bus_names]):
@@ -453,6 +460,13 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
                 
                 # Ignore those too far away
                 if loc_dist(loc, cameras[0].loc) > max_dist_to_include:
+                    continue
+
+                # Ignore if not visible in camera
+                to_loc = vector_from_to(cameras[0].loc, loc)
+                to_loc = vector_normalize(to_loc)
+                sp = scalar_product(to_loc, cam_forward)
+                if sp < 0.0:
                     continue
 
                 bbox = actor.bounding_box
