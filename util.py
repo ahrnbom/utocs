@@ -1,5 +1,5 @@
 from math import sqrt
-
+import numpy as np 
 import carla
 
 def loc_dist(a, b):
@@ -18,6 +18,9 @@ def vector_from_to(a:carla.Vector3D, b:carla.Vector3D):
 
 def scalar_product(a:carla.Vector3D, b:carla.Vector3D):
     return a.x*b.x + a.y*b.y + a.z*b.z
+
+def vector_dist(a, b):
+    return np.linalg.norm(a-b)
 
 # long_str(2) -> '0002'
 # long_str(42, 3) -> '042'

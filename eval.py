@@ -26,7 +26,7 @@ class RoadUser:
     forward:np.ndarray
 
 def iou_dist3D(gt:RoadUser, ru:RoadUser, min_iou:float) -> float:
-    if gt.type == ru.class_name:
+    if gt.type == ru.type:
         iou = iou3D(gt, ru)
         if iou < min_iou:
             return np.nan
@@ -94,13 +94,12 @@ def evaluate_scenario(tr_folder:Path,
 
     frames = [int(f.stem) for f in gt_folder.glob('*.json')]
     frames.sort()
-
+    
     for frame_no in frames:
         gt_instances = load_instances(gt_folder, frame_no)
         gt_ids = [g.id for g in gt_instances]
 
         tr_instances = load_instances(tr_folder, frame_no)
-
         # Remove tracks that are too far away 
         if max_dist < np.inf:
             c = center_point[0:2]
@@ -131,11 +130,12 @@ def evaluate_scenario(tr_folder:Path,
 
 def main():
     args = argparse.ArgumentParser()
-    args.add_argument("--folder", hint="Path to folder containing the tracks to be evaluated", type=str)
-    args.add_argument("--gt_folder", hint="Path of ground truth", default="./output", type=str)
-    args.add_argument("--iou_thresh", type=float, hint="Usually 0.25, how much the road user's rotated rectangles must overlap to consider it a hit", default=0.25)
-    args.add_argument("--max_cam_dist", hint="How far away from camera we consider, in metres", type=float, default=80.0)
+    args.add_argument("--folder", help="Path to folder containing the tracks to be evaluated", type=str)
+    args.add_argument("--gt_folder", help="Path of ground truth", default="./output", type=str)
+    args.add_argument("--iou_thresh", type=float, help="Usually 0.25, how much the road user's rotated rectangles must overlap to consider it a hit", default=0.25)
+    args.add_argument("--max_cam_dist", help="How far away from camera we consider, in metres", type=float, default=80.0)
     args.add_argument("--quiet", action="store_true", help="Include to only output the final average MOTA")
+    args.add_argument("--set", type=str, help="Either 'training', 'validation' or 'test", default='test')
     args = args.parse_args()
 
     folder = Path(args.folder)
@@ -143,12 +143,19 @@ def main():
     iou_thresh = args.iou_thresh
     max_dist = args.max_cam_dist 
     verbose = not args.quiet
+    which_set = args.set
 
-    seqs_folder = gt_folder / 'scenarios'
-    seqs = [f for f in seqs_folder.glob('*') if f.is_dir()]
-    motas = list() 
+    assert which_set in ['training', 'validation', 'test']
+    sets_lines = [l for l in Path('sets.txt').read_text().split('\n') if l]
+    seq_nums = dict()
+    for line in sets_lines:
+        splot = line.split(': ')
+        set_name = splot[0]
+        seq_nums[set_name] = [int(v) for v in splot[1].split(' ')]
 
-    for seq in seqs:
+    motas = list()
+    for seq_num in seq_nums[which_set]:
+        seq = gt_folder / 'scenarios' / long_str(seq_num, 4)
         cams = build_camera_matrices(seq)
         # Since this is only used for measuring the distance, we keep things
         # simple by only looking at the default camera, in case there are many 
@@ -156,9 +163,10 @@ def main():
         cam_cen = pflat(null_space(cam))
 
         mota = evaluate_scenario(folder / seq.name, 
-                                 gt_folder / 'positions' / seq.name,
+                                 seq / 'positions',
                                  cam_cen, max_dist, iou_thresh, 
-                                 name=folder.name, verbose=verbose)
+                                 name=f"{folder.name}{seq_num}", 
+                                 verbose=verbose)
         motas.append(mota)
 
     mean_mota = np.mean(motas)
