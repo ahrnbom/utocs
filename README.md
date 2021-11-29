@@ -20,9 +20,21 @@ To be decided...
 ### Instructions
 1. Install Carla Simulator 0.9.12, both the Python package and the server
 1. Start the server with `./CarlaUE4.sh` in the appropriate folder
-1. Install Python dependencies with `python3 -m pip install carla==0.9.12`, or to include the optional dependencies for visualization do instead `python3 -m pip install carla==0.9.12 imageio imageio-ffmpeg opencv-python`
+1. Install Python dependencies with `python3 -m pip install carla==0.9.12 shapely motmetrics scipy numpy`, or to include the optional dependencies for visualization do instead `python3 -m pip install carla==0.9.12 imageio imageio-ffmpeg opencv-python shapely motmetrics scipy numpy`
 1. While the server is running, execute `python3 start.py`. Use the `-h` flag to see options. 
 1. To run the optional visualization, run `python3 visualize_samples.py`. Again, use `-h` to see options.
+
+### Evaluation
+To evaluate a method against the UTOCS dataset, make sure your method exports to the following JSON format:
+
+A folder, typically named after the method itself, should contain one subfolder for each sequence (`0000`, `0001` and so on). Each such folder should contain .json files for each frame, called `000000.json`, `000001.json` and so on. These files should be JSON formatted, as a list containing objects with (at least) the following entries:
+1. `"type"` - the road user class ("car", "bicyclist", "pedestrian", "truck" or "bus").
+1. `"id"` - ID of that road user, should be consistent across frames. Does obviously not need to match the ground truth IDs!
+1. `"x"`, `"y"` and `"z"`: The x, y and z position of the lower center point of the road user (touching the ground).
+1. `"l"`, `"w"` and `"h"`: The length (in the forward direction), width and height (upwards) of the road user. The height is currently not used.
+1. `"forward_x"`, `"forward_y"` and `"forward_z"`: A normalized vector for the direction the road user is facing, representing the orientation of the road user.
+
+To run evaluation, simply run `python3 eval.py --folder PATH/TO/METHOD/FOLDER` and the average MOTA across all sequences will be presented in the terminal.
 
 ### Notes
 - Note that Carla Simulator has a tendency to crash if left to run for several hours. If that happens, use the `--range` parameter to `start.py` to specify which scenarios still need to be generated, so that you do not need to run all sequences in a single go.
