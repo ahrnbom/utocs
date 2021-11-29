@@ -442,6 +442,13 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
                 w = bbox.extent.y*2
                 h = bbox.extent.z*2
 
+                if abs(w) < 0.001:
+                    # Sometimes bicyclists have zero width due to a Carla bug
+                    if vehicle_type == 'bicyclist':
+                        w = 0.25
+                    else:
+                        raise ValueError(f"Road user with ID {vehicle_id-first_id} of type {vehicle_type} has no width! Not sure what to do")
+
                 v = vehicle.get_velocity()
                 rot = vehicle.get_transform().rotation
                 forward = rot.get_forward_vector()
