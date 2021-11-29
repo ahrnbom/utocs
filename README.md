@@ -15,7 +15,7 @@ The videos are stored as 720p .jpg files, at 25 FPS. By default, monocular video
 ![Example image from UTOCS](https://raw.githubusercontent.com/ahrnbom/utocs/main/examples/example1.jpg)
 
 ### License
-To be decided...
+*LICENSE COMING SOON*
 
 ### Instructions
 1. Install Carla Simulator 0.9.12, both the Python package and the server
@@ -34,6 +34,8 @@ A folder, typically named after the method itself, should contain one subfolder 
 1. `"l"`, `"w"` and `"h"`: The length (in the forward direction), width and height (upwards) of the road user. The height is currently not used.
 1. `"forward_x"`, `"forward_y"` and `"forward_z"`: A normalized vector for the direction the road user is facing, representing the orientation of the road user.
 
+The format is essentially the same as how UTOCS stores the ground truth. 
+
 To run evaluation, simply run `python3 eval.py --folder PATH/TO/METHOD/FOLDER` and the average MOTA across all sequences will be presented in the terminal.
 
 ### Notes
@@ -42,3 +44,13 @@ To run evaluation, simply run `python3 eval.py --folder PATH/TO/METHOD/FOLDER` a
 - For a monocular view, the entire dataset is approximately 60 GB in size. 
 - Only moving road users are included in the ground truth. Your tracking method should remove any tracks without significant movement before evaluation. 
 - The tracking method to be evaluated is allowed (and supposed) to use the camera calibration and ground points for computing the tracks. The method is not allowed to use the positions text files from the test set in any way prior to evaluation. 
+
+### Dataset Download
+If you are unable or unwilling to run the UTOCS code to generate the dataset, you can also download the dataset from this link, with only a monocular view:
+
+*LINK COMING SOON*
+
+### Citation
+If you use the UTOCS dataset in your research, please cite this paper:
+
+*BIBTEX COMING SOON*
