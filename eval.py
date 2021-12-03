@@ -67,12 +67,18 @@ def rotated_rectangle(ru:RoadUser):
     return box 
 
 # Loads road users from JSON file
-def load_instances(folder:Path, frame_no:int) -> List[RoadUser]:
+def load_instances(folder:Path, frame_no:int, classes=None) -> List[RoadUser]:
     file_path = folder / f"{long_str(frame_no, 6)}.json"
     file_text = file_path.read_text()
     objs = json.loads(file_text)
     rus = list()
     for obj in objs:
+
+        # Exclude this object if not in the predefined list of included classes
+        if classes is not None:
+            if not obj['type'] in classes:
+                continue
+
         X = np.array([obj['x'], obj['y'], obj['z']], dtype=np.float32)
         shape = np.array([obj['l'], obj['w'], obj['h']], dtype=np.float32)
         forward = np.array([obj['forward_x'], obj['forward_y'], obj['forward_z']], 
@@ -85,6 +91,7 @@ def evaluate_scenario(tr_folder:Path,
                       gt_folder:Path,
                       min_iou:float=0.25,
                       name:str='some_tracker',
+                      classes=None,
                       verbose=True) -> float:
 
     acc = mm.MOTAccumulator(auto_id=True)
@@ -93,10 +100,10 @@ def evaluate_scenario(tr_folder:Path,
     frames.sort()
     
     for frame_no in frames:
-        gt_instances = load_instances(gt_folder, frame_no)
+        gt_instances = load_instances(gt_folder, frame_no, classes)
         gt_ids = [g.id for g in gt_instances]
 
-        tr_instances = load_instances(tr_folder, frame_no)
+        tr_instances = load_instances(tr_folder, frame_no, classes)
         tr_ids = [t.id for t in tr_instances]
 
         # Present distances to the format expected by MOTMetrics
@@ -126,6 +133,7 @@ def main():
     args.add_argument("--iou_thresh", type=float, help="Usually 0.25, how much the road user's rotated rectangles must overlap to consider it a hit", default=0.25)
     args.add_argument("--quiet", action="store_true", help="Include to only output the final average MOTA")
     args.add_argument("--set", type=str, help="Either 'training', 'validation' or 'test", default='test')
+    args.add_argument("--classes", type=str, help="Set to a comma-separated list of classes to only evaluate those", default="")
     args = args.parse_args()
 
     folder = Path(args.folder)
@@ -133,6 +141,12 @@ def main():
     iou_thresh = args.iou_thresh
     verbose = not args.quiet
     which_set = args.set
+
+    if args.classes:
+        classes = args.classes.split(',')
+    else:
+        # None means all classes are included
+        classes = None 
 
     assert which_set in ['training', 'validation', 'test']
     sets_lines = [l for l in Path('sets.txt').read_text().split('\n') if l]
@@ -149,6 +163,7 @@ def main():
         mota = evaluate_scenario(folder / seq.name, 
                                  seq / 'positions',
                                  iou_thresh, name=f"{folder.name}{seq_num}", 
+                                 classes=classes,
                                  verbose=verbose)
         motas.append(mota)
 
