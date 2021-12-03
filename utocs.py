@@ -445,7 +445,7 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
                 if abs(w) < 0.001:
                     # Sometimes bicyclists have zero width due to a Carla bug
                     if vehicle_type == 'bicyclist':
-                        w = 0.25
+                        w = 0.5
                     else:
                         raise ValueError(f"Road user with ID {vehicle_id-first_id} of type {vehicle_type} has no width! Not sure what to do")
 
