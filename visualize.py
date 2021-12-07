@@ -237,8 +237,9 @@ def render_topdown_frame(dims:Tuple, classes:List[str], attempt:List[Dict],
 
     # Draw camera 
     cam_cen = pflat(null_space(cam)).flatten()
-    cam_dir = normalize_numpy_vector(cam[2, 0:3]) * 10.0 
-    plt.arrow(cam_cen[0], cam_cen[1], cam_dir[0], cam_dir[1])
+    cam_dir = normalize_numpy_vector(cam[2, 0:3]) * 7.5 
+    plt.arrow(cam_cen[0], cam_cen[1], cam_dir[0], cam_dir[1], width=0.01,
+              head_width=1.0)
 
     plt.xlim(minx - 2, maxx + 2)
     plt.ylim(miny - 2, maxy + 2)
