@@ -57,7 +57,8 @@ def visualize_scenario(scenario:Path, out_folder:Path, cam_index:int):
             cam_num = int(good_lstrip(cam.name, 'cam'))
             proj_matrix = projection_matrices[cam_num]
 
-            ground_points = np.genfromtxt(scenario / 'ground_points.txt', delimiter=',', dtype=np.float32).T
+            ground_points = np.genfromtxt(scenario / 'ground_points.txt', 
+                                          delimiter=',', dtype=np.float32).T
             n = ground_points.shape[1]
             new_ground = np.ones((4, n), dtype=np.float32)
             new_ground[0:3, :] = ground_points
@@ -69,10 +70,13 @@ def visualize_scenario(scenario:Path, out_folder:Path, cam_index:int):
                 ground_point = pflat(proj_ground[:, i_ground])
                 x = intr(ground_point[0])
                 y = intr(ground_point[1])
-                cv2.drawMarker(im, (x, y), (255,0,128), cv2.MARKER_STAR, 4, 2, cv2.LINE_AA)
+                cv2.drawMarker(im, (x, y), (255,0,128), cv2.MARKER_STAR, 4, 2, 
+                               cv2.LINE_AA)
                 
                 # To number the ground points:
-                #cv2.putText(im, str(i_ground), (x,y+10), cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255), 1, cv2.LINE_AA)
+                #cv2.putText(im, str(i_ground), (x,y+10), 
+                #            cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255), 1, 
+                #            cv2.LINE_AA)
             
             up = np.array([0.0, 0.0, 1.0, 0.0], dtype=np.float32)
 
@@ -82,7 +86,9 @@ def visualize_scenario(scenario:Path, out_folder:Path, cam_index:int):
                 ru_id = instance['id']
 
                 l, w, h = [instance[key] for key in "lwh"]
-                fx, fy, fz = [instance[key] for key in ['forward_x', 'forward_y', 'forward_z']]
+                fx, fy, fz = [instance[key] for key in ['forward_x', 
+                                                        'forward_y', 
+                                                        'forward_z']]
                 forward = np.array([fx, fy, fz, 0.0], dtype=np.float32)
                 
                 right = np.cross(forward[0:3], up[0:3])
@@ -94,20 +100,29 @@ def visualize_scenario(scenario:Path, out_folder:Path, cam_index:int):
                 y = intr(y)
 
                 if x >= 0 and x <= 1280 and y >= 0 and y <= 720:
-                    cv2.drawMarker(im, (x,y), (0,255,255), cv2.MARKER_CROSS, 8, 2, cv2.LINE_AA)
-                    cv2.putText(im, f"{ru_type}{ru_id}", (x,y), cv2.FONT_HERSHEY_PLAIN, 1.5, (0,0,0), 2, cv2.LINE_AA)
-                    cv2.putText(im, f"{ru_type}{ru_id}", (x,y), cv2.FONT_HERSHEY_PLAIN, 1.5, (255,255,255), 1, cv2.LINE_AA)
+                    cv2.drawMarker(im, (x,y), (0,255,255), cv2.MARKER_CROSS, 8, 
+                                   2, cv2.LINE_AA)
+                    cv2.putText(im, f"{ru_type}{ru_id}", (x,y), 
+                                cv2.FONT_HERSHEY_PLAIN, 1.5, (0,0,0), 2, 
+                                cv2.LINE_AA)
+                    cv2.putText(im, f"{ru_type}{ru_id}", (x,y), 
+                                cv2.FONT_HERSHEY_PLAIN, 1.5, (255,255,255), 1, 
+                                cv2.LINE_AA)
 
                     draw3Dbox(im, proj_matrix, X, l, w, h, forward, right, up)
 
-            cv2.putText(im, f"Frame {frame_no}", (10, 20), cv2.FONT_HERSHEY_PLAIN, 1.5, (0,0,0), 2, cv2.LINE_AA)
-            cv2.putText(im, f"Frame {frame_no}", (10, 20), cv2.FONT_HERSHEY_PLAIN, 1.5, (255,255,255), 1, cv2.LINE_AA)
+            cv2.putText(im, f"Frame {frame_no}", (10, 20), 
+                        cv2.FONT_HERSHEY_PLAIN, 1.5, (0,0,0), 2, cv2.LINE_AA)
+            cv2.putText(im, f"Frame {frame_no}", (10, 20), 
+                        cv2.FONT_HERSHEY_PLAIN, 1.5, (255,255,255), 1, 
+                        cv2.LINE_AA)
             
             vid.append_data(im)
             if frame_no%20 == 0:
-                print(f"{frame_no} / {n_frames} ({100*frame_no/n_frames:.1f}%) scenario: {scenario.name}")
+                print(f"{frame_no} / {n_frames} ({100*frame_no/n_frames:.1f}%)"\
+                      f" scenario: {scenario.name}")
 
-def draw3Dbox(im, P, X, l, w, h, forward, right, up):
+def build3Dbox(X, l, w, h, forward, right, up):
     points3D = list()
     for il in (-0.5, 0.5):
         dl = il * l * forward 
@@ -117,8 +132,20 @@ def draw3Dbox(im, P, X, l, w, h, forward, right, up):
                 dh = ih * h * up 
                 point3D = X + dl + dw + dh 
                 points3D.append(point3D)
+    return points3D
 
-    for indices in [(0,1,3,2), (4,5,7,6), (0,4,5,1), (2,6,7,3), (0,4,6,2), (1,5,7,3)]:
+def darker(color):
+    r = 2*color[0]//3
+    g = 2*color[1]//3
+    b = 2*color[2]//3
+    return (r, g, b)
+
+def draw3Dbox(im, P, X, l, w, h, forward, right, up, color=(255,0,0)):
+    points3D = build3Dbox(X, l, w, h, forward, right, up)
+
+    for indices in [(0,1,3,2), (4,5,7,6), (0,4,5,1), (2,6,7,3), (0,4,6,2), 
+                    (1,5,7,3)]:
+
         p1 = points3D[indices[0]]
         p2 = points3D[indices[1]]
         p3 = points3D[indices[2]]
@@ -136,7 +163,7 @@ def draw3Dbox(im, P, X, l, w, h, forward, right, up):
             bx, by, _ = b2D
             bx = intr(bx)
             by = intr(by)
-            cv2.line(im, (ax, ay), (bx, by), (100,255,100), 1, cv2.LINE_AA)
+            cv2.line(im, (ax, ay), (bx, by), color, 1, cv2.LINE_AA)
 
     # Show forward direction
     Xf = X + l/2.0 * forward 
@@ -144,12 +171,16 @@ def draw3Dbox(im, P, X, l, w, h, forward, right, up):
     xf, yf, _ = Xf2D
     xf = intr(xf)
     yf = intr(yf)
-    cv2.drawMarker(im, (xf, yf), (255,0,0), cv2.MARKER_TRIANGLE_UP, 8, 2, cv2.LINE_AA)
+    point = (xf, yf)
+    cv2.drawMarker(im, point, darker(color), cv2.MARKER_TRIANGLE_UP, 8, 2, 
+                   cv2.LINE_AA)
 
 if __name__ == "__main__":
     args = argparse.ArgumentParser()
-    args.add_argument("--folder", help="Where the data is located", default="./output")
-    args.add_argument("--cam", help="Which camera (default: 0)", type=int, default=0)
+    args.add_argument("--folder", help="Where the data is located",
+                      default="./output")
+    args.add_argument("--cam", help="Which camera (default: 0)", type=int, 
+                      default=0)
     args = args.parse_args()
     folder = Path(args.folder)
     cam_index = args.cam

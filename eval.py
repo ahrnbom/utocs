@@ -25,6 +25,15 @@ class RoadUser:
     shape:np.ndarray
     forward:np.ndarray
 
+def get_seqnums():
+    sets_lines = [l for l in Path('sets.txt').read_text().split('\n') if l]
+    seq_nums = dict()
+    for line in sets_lines:
+        splot = line.split(': ')
+        set_name = splot[0]
+        seq_nums[set_name] = [int(v) for v in splot[1].split(' ')]
+    return seq_nums 
+
 def iou_dist3D(gt:RoadUser, ru:RoadUser, min_iou:float) -> float:
     if gt.type == ru.type:
         iou = iou3D(gt, ru)
@@ -81,8 +90,9 @@ def load_instances(folder:Path, frame_no:int, classes=None) -> List[RoadUser]:
 
         X = np.array([obj['x'], obj['y'], obj['z']], dtype=np.float32)
         shape = np.array([obj['l'], obj['w'], obj['h']], dtype=np.float32)
-        forward = np.array([obj['forward_x'], obj['forward_y'], obj['forward_z']], 
-                        dtype=np.float32)
+        forward = np.array([obj['forward_x'], obj['forward_y'], 
+                            obj['forward_z']], 
+                            dtype=np.float32)
         ru =  RoadUser(X, obj['type'], obj['id'], shape, forward)
         rus.append(ru)
     return rus 
@@ -128,12 +138,21 @@ def evaluate_scenario(tr_folder:Path,
 
 def main():
     args = argparse.ArgumentParser()
-    args.add_argument("--folder", help="Path to folder containing the tracks to be evaluated", type=str)
-    args.add_argument("--gt_folder", help="Path of ground truth", default="./output", type=str)
-    args.add_argument("--iou_thresh", type=float, help="Usually 0.25, how much the road user's rotated rectangles must overlap to consider it a hit", default=0.25)
-    args.add_argument("--quiet", action="store_true", help="Include to only output the final average MOTA")
-    args.add_argument("--set", type=str, help="Either 'training', 'validation' or 'test", default='test')
-    args.add_argument("--classes", type=str, help="Set to a comma-separated list of classes to only evaluate those", default="")
+
+    args.add_argument("--folder", type=str,
+                      help="Path to folder with the tracks to be evaluated")
+    args.add_argument("--gt_folder",  default="./output", type=str,
+                      help="Path of ground truth",)
+    args.add_argument("--set", type=str, default='test',
+                      help="Either 'training', 'validation' or 'test")
+    args.add_argument("--classes", type=str, default="",
+                      help="Set to a comma-separated list of classes to only" \
+                           "evaluate those")
+    args.add_argument("--iou_thresh", type=float, default=0.25,
+                      help="Usually 0.25, how much the road user's rotated " \
+                           "rectangles must overlap to consider it a hit", )
+    args.add_argument("--quiet", action="store_true", 
+                      help="Include to only output the final average MOTA")
     args = args.parse_args()
 
     folder = Path(args.folder)
@@ -149,12 +168,7 @@ def main():
         classes = None 
 
     assert which_set in ['training', 'validation', 'test']
-    sets_lines = [l for l in Path('sets.txt').read_text().split('\n') if l]
-    seq_nums = dict()
-    for line in sets_lines:
-        splot = line.split(': ')
-        set_name = splot[0]
-        seq_nums[set_name] = [int(v) for v in splot[1].split(' ')]
+    seq_nums = get_seqnums()
 
     motas = list()
     for seq_num in seq_nums[which_set]:
