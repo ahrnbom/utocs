@@ -22,7 +22,7 @@ The videos are stored as 720p .jpg files, at 25 FPS. By default, monocular video
 1. Start the server with `./CarlaUE4.sh` in the appropriate folder
 1. Install Python dependencies with `python3 -m pip install carla==0.9.12 shapely motmetrics scipy numpy`, or to include the optional dependencies for visualization do instead `python3 -m pip install carla==0.9.12 imageio imageio-ffmpeg opencv-python shapely motmetrics scipy numpy matplotlib`
 1. While the server is running, execute `python3 start.py`. Use the `-h` flag to see options. 
-1. To run the optional visualization, run `python3 visualize_samples.py`. Again, use `-h` to see options.
+1. To run the optional visualization, run `python3 visualize.py`. Again, use `-h` to see options.
 
 ### Evaluation
 To evaluate a method against the UTOCS dataset, make sure your method exports to the following JSON format:

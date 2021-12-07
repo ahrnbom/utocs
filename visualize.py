@@ -1,6 +1,7 @@
 """
     This script visualizes user generated tracks alongside the ground truth
-    in both pixel and world coordinates (top-down) as videos
+    in both pixel and world coordinates (top-down) as videos. Can also be used
+    to only visualize the ground truth 
 """
 
 from pathlib import Path
@@ -13,12 +14,24 @@ import numpy as np
 import json
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-import matplotlib.transforms as transforms 
+import matplotlib.transforms as transforms
+from scipy.linalg import null_space 
 
-from util import good_lstrip, pflat, intr, long_str
+from util import normalize_numpy_vector, pflat, intr, long_str
 from cameras import build_camera_matrices
-from visualize_samples import build3Dbox, draw3Dbox, read_positions
 from eval import get_seqnums
+
+def read_positions(pos_path:Path):
+    text = pos_path.read_text()
+    instances = json.loads(text)
+    for instance in instances:
+        x = instance['x']
+        y = instance['y']
+        z = instance['z']
+        X = np.array([x, y, z, 1], dtype=np.float32)
+        instance['X'] = X
+        # X is used to make it easy to project into cameras
+    return instances
 
 # Splits an int in two approximately equal ints that sum up to x 
 def int_split2(x):
@@ -50,6 +63,12 @@ def brighter(color):
     b = (color[2] + 255) // 2
     return (r, g, b)
 
+def darker(color):
+    r = 2*color[0]//3
+    g = 2*color[1]//3
+    b = 2*color[2]//3
+    return (r, g, b)
+
 def matplotlib_color(color, alpha=1.0):
     new_color = [c/256.0 for c in color]
     new_color.append(alpha)
@@ -69,8 +88,56 @@ def get_colors(categories:List[str]):
         colors[cat] = col 
     return colors 
 
-def visualize_attempt(folder:Path, gt_folder:Path, classes:List[str], 
-                      seq_num:int, out_path:Path, cam_num=0):
+def build3Dbox(X, l, w, h, forward, right, up):
+    points3D = list()
+    for il in (-0.5, 0.5):
+        dl = il * l * forward 
+        for iw in (-0.5, 0.5):
+            dw = iw * w * right 
+            for ih in (0.0, 1.0):
+                dh = ih * h * up 
+                point3D = X + dl + dw + dh 
+                points3D.append(point3D)
+    return points3D
+
+
+def draw3Dbox(im, P, X, l, w, h, forward, right, up, color=(255,0,0)):
+    points3D = build3Dbox(X, l, w, h, forward, right, up)
+
+    for indices in [(0,1,3,2), (4,5,7,6), (0,4,5,1), (2,6,7,3), (0,4,6,2), 
+                    (1,5,7,3)]:
+
+        p1 = points3D[indices[0]]
+        p2 = points3D[indices[1]]
+        p3 = points3D[indices[2]]
+        p4 = points3D[indices[3]]
+
+        for pair in [(p1, p2), (p2, p3), (p3, p4), (p4, p1)]:
+            a, b = pair 
+            
+            a2D = pflat(P @ a)
+            ax, ay, _ = a2D
+            ax = intr(ax)
+            ay = intr(ay)
+
+            b2D = pflat(P @ b)
+            bx, by, _ = b2D
+            bx = intr(bx)
+            by = intr(by)
+            cv2.line(im, (ax, ay), (bx, by), color, 1, cv2.LINE_AA)
+
+    # Show forward direction
+    Xf = X + l/2.0 * forward 
+    Xf2D = pflat(P @ Xf)
+    xf, yf, _ = Xf2D
+    xf = intr(xf)
+    yf = intr(yf)
+    point = (xf, yf)
+    cv2.drawMarker(im, point, darker(color), cv2.MARKER_TRIANGLE_UP, 8, 2, 
+                   cv2.LINE_AA)
+
+def visualize(folder:Path, gt_folder:Path, classes:List[str], 
+              seq_num:int, out_path:Path, cam_num=0):
     
     colors = get_colors(classes)
 
@@ -89,22 +156,27 @@ def visualize_attempt(folder:Path, gt_folder:Path, classes:List[str],
         for im_path in images:
             frame_no = int(im_path.stem)
             image = iio.imread(im_path)
-            attempt = read_positions(folder / f"{long_str(frame_no, 6)}.json")
+            if folder is not None:
+                attempt = read_positions(folder /   
+                                         f"{long_str(frame_no, 6)}.json")
+            else:
+                attempt = None 
             gt = read_positions(gt_folder / f"{long_str(frame_no, 6)}.json")
 
             frame1 = render_pixel_frame(image, classes, frame_no, attempt, gt, 
                                         cam, colors, ground)
             frame2 = render_topdown_frame(frame1.shape, classes, attempt, gt, 
-                                          colors, ground)
+                                          cam, colors, ground)
             
             frame = np.vstack([frame1, frame2])
             vid.append_data(frame)
 
             if frame_no%100 == 0:
-                print(f"{frame_no+1} {100.0*frame_no/n_ims:.2f}%")
+                print(f"Frame {frame_no+1}, {100.0*frame_no/n_ims:.2f}%, " \
+                      f"Sequence: {seq_num}")
 
 def render_topdown_frame(dims:Tuple, classes:List[str], attempt:List[Dict],
-                         ground_truth:List[Dict], colors:Dict, 
+                         ground_truth:List[Dict], cam:np.ndarray, colors:Dict, 
                          ground:np.ndarray):
     
     fig = plt.figure()
@@ -129,7 +201,8 @@ def render_topdown_frame(dims:Tuple, classes:List[str], attempt:List[Dict],
         edge_color = matplotlib_color(color)
         face_color = matplotlib_color(color, 0.35)
         rect = patches.Rectangle((x, y), l, w, ec=edge_color, fc=face_color)
-        transform = transforms.Affine2D.identity().rotate_around(x, y, phi) + ax.transData
+        transform = transforms.Affine2D.identity().rotate_around(x, y, phi) \
+                    + ax.transData
         rect.set_transform(transform)
         ax.add_patch(rect)
 
@@ -138,27 +211,34 @@ def render_topdown_frame(dims:Tuple, classes:List[str], attempt:List[Dict],
         maxx = max(maxx, x)
         maxy = max(maxy, y)
 
-    for at in attempt:
-        class_name = at['type']
-        if not class_name in classes:
-            continue 
+    if attempt is not None:
+        for at in attempt:
+            class_name = at['type']
+            if not class_name in classes:
+                continue 
 
-        X, l, w = [at[key] for key in "Xlw"]
-        phi = np.arctan2(at['forward_y'], at['forward_x'])
-        x, y = X.flatten()[0:2]
+            X, l, w = [at[key] for key in "Xlw"]
+            phi = np.arctan2(at['forward_y'], at['forward_x'])
+            x, y = X.flatten()[0:2]
 
-        color = colors[class_name]
-        edge_color = matplotlib_color(color)
-        face_color = matplotlib_color(color, 0.75)
-        rect = patches.Rectangle((x, y), l, w, ec=edge_color, fc=face_color)
-        transform = transforms.Affine2D.identity().rotate_around(x, y, phi) + ax.transData
-        rect.set_transform(transform)
-        ax.add_patch(rect)
+            color = colors[class_name]
+            edge_color = matplotlib_color(color)
+            face_color = matplotlib_color(color, 0.75)
+            rect = patches.Rectangle((x, y), l, w, ec=edge_color, fc=face_color)
+            transform = transforms.Affine2D.identity().rotate_around(x, y, phi)\
+                        + ax.transData
+            rect.set_transform(transform)
+            ax.add_patch(rect)
 
-        minx = min(minx, x)
-        miny = min(miny, y)
-        maxx = max(maxx, x)
-        maxy = max(maxy, y)
+            minx = min(minx, x)
+            miny = min(miny, y)
+            maxx = max(maxx, x)
+            maxy = max(maxy, y)
+
+    # Draw camera 
+    cam_cen = pflat(null_space(cam)).flatten()
+    cam_dir = normalize_numpy_vector(cam[2, 0:3]) * 10.0 
+    plt.arrow(cam_cen[0], cam_cen[1], cam_dir[0], cam_dir[1])
 
     plt.xlim(minx - 2, maxx + 2)
     plt.ylim(miny - 2, maxy + 2)
@@ -206,33 +286,36 @@ def render_pixel_frame(image:np.ndarray, classes:List[str], frame_no:int,
         draw3Dbox(image, cam, X, l, w, h, forward, right, up, color)
 
     # Draw the attempted tracks 
-    for at in attempt:
-        class_name = at['type']
-        if not class_name in classes:
-            continue 
+    if attempt is not None:
+        for at in attempt:
+            class_name = at['type']
+            if not class_name in classes:
+                continue 
 
-        X, l, w, h = [at[key] for key in "Xlwh"]
-        forward = np.array([at['forward_x'], at['forward_y'], 
-                           at['forward_z'], 0],
-                           dtype=np.float32)
-        right = np.array([*np.cross(forward[0:3], up[0:3]), 0.0], 
-                         dtype=np.float32)
+            X, l, w, h = [at[key] for key in "Xlwh"]
+            forward = np.array([at['forward_x'], at['forward_y'], 
+                            at['forward_z'], 0],
+                            dtype=np.float32)
+            right = np.array([*np.cross(forward[0:3], up[0:3]), 0.0], 
+                            dtype=np.float32)
 
-        color = colors[class_name]
-        draw3Dbox(image, cam, X, l, w, h, forward, right, up, color)
-    
-    # Thicker black first, then thin white, very readable 
-    cv2.putText(image, f"Frame {frame_no}", (10,20), cv2.FONT_HERSHEY_PLAIN, 
-                1.5, (0,0,0), 2, cv2.LINE_AA)
-    cv2.putText(image, f"Frame {frame_no}", (10,20), cv2.FONT_HERSHEY_PLAIN, 
-                1.5, (255,255,255), 1, cv2.LINE_AA)
+            color = colors[class_name]
+            draw3Dbox(image, cam, X, l, w, h, forward, right, up, color)
+        
+        # Thicker black first, then thin white, very readable 
+        cv2.putText(image, f"Frame {frame_no}", (10,20), cv2.FONT_HERSHEY_PLAIN, 
+                    1.5, (0,0,0), 2, cv2.LINE_AA)
+        cv2.putText(image, f"Frame {frame_no}", (10,20), cv2.FONT_HERSHEY_PLAIN, 
+                    1.5, (255,255,255), 1, cv2.LINE_AA)
 
     return image 
 
 if __name__ == "__main__":
     args = argparse.ArgumentParser()
     args.add_argument("--folder", type=str,
-                      help="Path to folder with the tracks to be evaluated")
+                      help="Path to folder with the tracks to be visualized, " \
+                           "can also be left empty to only visualize GT",
+                           default="")
     args.add_argument("--gt_folder",  default="./output", type=str,
                       help="Path of ground truth",)
     args.add_argument("--set", type=str, default='test',
@@ -245,7 +328,10 @@ if __name__ == "__main__":
                       "it will be written in the folder 'output'")
     args = args.parse_args()
 
-    folder = Path(args.folder)
+    if not args.folder:
+        folder = None
+    else:
+        folder = Path(args.folder)
     gt_folder = Path(args.gt_folder)
     which_set = args.set
 
@@ -259,16 +345,28 @@ if __name__ == "__main__":
     
     for seq_num in seq_nums[which_set]:
         seq = gt_folder / 'scenarios' / long_str(seq_num, 4)
-        _folder = folder / seq.name
+        if folder is not None:
+            _folder = folder / seq.name
+        else:
+            _folder = None 
         _gtfolder = seq / 'positions'
         print(f"Visualizing {seq_num} from {which_set} for run {folder}")
 
         if args.export:
+            if folder is None:
+                raise ValueError("Export is incompatible with not having " \
+                                 "a folder with tracks to visualize")
+
             out_path = folder / f"utocs_visualization_{seq_num}.mp4"
         else:
-            out_folder = Path('output') / 'visualized_attempts'
-            out_folder.mkdir(exist_ok=True, parents=True)
-            out_path = out_folder / "utocs_visualization_" \
-                                    f"{folder.name}_{seq_num}.mp4"
+            if folder is None:
+                out_folder = Path('output') / 'visualized_gt'
+                out_folder.mkdir(exist_ok=True, parents=True)
+                out_path = out_folder / f"{seq_num}.mp4"
+            else:
+                out_folder = Path('output') / 'visualized_attempts'
+                out_folder.mkdir(exist_ok=True, parents=True)
+                out_path = out_folder / "utocs_visualization_" \
+                                        f"{folder.name}_{seq_num}.mp4"
 
-        visualize_attempt(_folder, _gtfolder, classes, seq_num, out_path)
+        visualize(_folder, _gtfolder, classes, seq_num, out_path)

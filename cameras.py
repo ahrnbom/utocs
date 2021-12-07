@@ -88,17 +88,24 @@ def euler_angles(phi, theta, psi):
 
 def is_visible(x, y, z, P, im_h=720, im_w=1280):
     point = np.array([x, y, z, 1.0], dtype=np.float32).reshape((4,1))
-    proj = pflat(P @ point).flatten()
-    px, py = proj[0:2]
-    if px >= 0 and px <= im_w and py >= 0 and py <= im_h:
-        return True 
-    
+    proj = (P @ point).flatten()
+    # Check if in front of the camera
+    if proj[-1] > 0.0:
+        px, py = pflat(proj)[0:2]
+        if px >= 0 and px <= im_w and py >= 0 and py <= im_h:
+            return True 
+        
     return False 
 
 def is_obj_visible(x, y, z, height, P, im_h=720, im_w=1280, min_height=10.0):
     point = np.array([x, y, z, 1.0], dtype=np.float32).reshape((4,1))
-    proj = pflat(P @ point).flatten()
-    px, py = proj[0:2]
+    proj = (P @ point).flatten()
+
+    # Check if behind the camera
+    if proj[-1] < 0.0:
+        return False 
+
+    px, py = pflat(proj)[0:2]
     if px >= 0 and px <= im_w and py >= 0 and py <= im_h:
         delta_height = np.array([0,0,height,0], dtype=np.float32).reshape((4,1))
         new_point = point + delta_height

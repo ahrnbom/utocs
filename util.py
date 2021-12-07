@@ -22,6 +22,13 @@ def scalar_product(a:carla.Vector3D, b:carla.Vector3D):
 def vector_dist(a, b):
     return np.linalg.norm(a-b)
 
+def normalize_numpy_vector(x: np.ndarray):
+    n = np.linalg.norm(x)
+    if n > 0.00001:
+        return x / n 
+    else:
+        return None 
+
 # long_str(2) -> '0002'
 # long_str(42, 3) -> '042'
 def long_str(i:int, N:int=4):
