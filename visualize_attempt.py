@@ -11,17 +11,47 @@ import numpy as np
 import argparse
 import numpy as np
 import json
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+import matplotlib.transforms as transforms 
 
 from util import good_lstrip, pflat, intr, long_str
 from cameras import build_camera_matrices
 from visualize_samples import build3Dbox, draw3Dbox, read_positions
 from eval import get_seqnums
 
+# Splits an int in two approximately equal ints that sum up to x 
+def int_split2(x):
+    if x%2 == 0:
+        return x//2, x//2
+    else:
+        return x//2, (x//2)+1
+
+def good_resize(im, new_h, new_w):
+    h, w, _ = im.shape 
+
+    h_scale = new_h/h 
+    w_scale = new_w/w
+
+    # Scale by whichever dimension needs the least change, and then pad 
+    scale = min(h_scale, w_scale)
+    w2, h2 = intr(w*scale), intr(h*scale)
+    im = cv2.resize(im, (w2, h2))
+
+    dh = int_split2(new_h - h2)
+    dw = int_split2(new_w - w2)
+
+    new_im = np.pad(im, (dh, dw, (0,0)))
+    return new_im 
+
 def brighter(color):
     r = (color[0] + 255) // 2
     g = (color[1] + 255) // 2
     b = (color[2] + 255) // 2
     return (r, g, b)
+
+def matplotlib_color(color):
+    return [c/256.0 for c in color]
 
 def get_colors(categories:List[str]):
     colors = dict()
@@ -71,23 +101,65 @@ def visualize_attempt(folder:Path, gt_folder:Path, classes:List[str],
 def render_topdown_frame(dims:Tuple, classes:List[str], attempt:List[Dict],
                          ground_truth:List[Dict], colors:Dict):
     
-    up = np.array([0,0,1,0], dtype=np.float32)
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    plt.grid(True)
+    ax.set_aspect('equal')
+
+    minx, maxx = np.inf, -np.inf 
+    miny, maxy = np.inf, -np.inf 
+
+    for gt in ground_truth:
+        class_name = gt['type']
+        if not class_name in classes:
+            continue 
+
+        X, l, w = [gt[key] for key in "Xlw"]
+        phi = np.arctan2(gt['forward_y'], gt['forward_x'])
+        x, y = X.flatten()[0:2]
+
+        color = matplotlib_color(brighter(colors[class_name]))
+        rect = patches.Rectangle((x, y), l, w, color=color, alpha=0.4)
+        transform = transforms.Affine2D.identity().rotate_around(x, y, phi) + ax.transData
+        rect.set_transform(transform)
+        ax.add_patch(rect)
+
+        minx = min(minx, x)
+        miny = min(miny, y)
+        maxx = max(maxx, x)
+        maxy = max(maxy, y)
 
     for at in attempt:
         class_name = at['type']
         if not class_name in classes:
             continue 
 
-        X, l, w, h = [at[key] for key in "Xlwh"]
-        forward = np.array([at['forward_x'], at['forward_y'], 
-                           at['forward_z'], 0],
-                           dtype=np.float32)
-        right = np.array([*np.cross(forward[0:3], up[0:3]), 0.0], 
-                         dtype=np.float32)
+        X, l, w = [at[key] for key in "Xlw"]
+        phi = np.arctan2(at['forward_y'], at['forward_x'])
+        x, y = X.flatten()[0:2]
 
-        color = colors[class_name]
-        points3D = build3Dbox(X, l, w, h, forward, right, up)
-        
+        color = matplotlib_color(colors[class_name])
+        rect = patches.Rectangle((x, y), l, w, color=color, alpha=0.5)
+        transform = transforms.Affine2D.identity().rotate_around(x, y, phi) + ax.transData
+        rect.set_transform(transform)
+        ax.add_patch(rect)
+
+        minx = min(minx, x)
+        miny = min(miny, y)
+        maxx = max(maxx, x)
+        maxy = max(maxy, y)
+
+    plt.xlim(minx - 2, maxx + 2)
+    plt.ylim(miny - 2, maxy + 2)
+
+    # Convert to image as a numpy array 
+    fig.canvas.draw()
+    buf = np.asarray(fig.canvas.buffer_rgba())[:, :, 0:3] # we only need RGB
+    buf = good_resize(buf, dims[0], dims[1])
+
+    plt.close()
+
+    return buf 
 
 def render_pixel_frame(image:np.ndarray, classes:List[str], frame_no:int, 
                        attempt:List[Dict], ground_truth:List[Dict], 
@@ -95,21 +167,7 @@ def render_pixel_frame(image:np.ndarray, classes:List[str], frame_no:int,
 
     up = np.array([0,0,1,0], dtype=np.float32)
 
-    for at in attempt:
-        class_name = at['type']
-        if not class_name in classes:
-            continue 
-
-        X, l, w, h = [at[key] for key in "Xlwh"]
-        forward = np.array([at['forward_x'], at['forward_y'], 
-                           at['forward_z'], 0],
-                           dtype=np.float32)
-        right = np.array([*np.cross(forward[0:3], up[0:3]), 0.0], 
-                         dtype=np.float32)
-
-        color = colors[class_name]
-        draw3Dbox(image, cam, X, l, w, h, forward, right, up, color)
-
+    # Draw ground truth 
     for gt in ground_truth:
         class_name = gt['type']
         if not class_name in classes:
@@ -124,6 +182,22 @@ def render_pixel_frame(image:np.ndarray, classes:List[str], frame_no:int,
 
         color = colors[class_name]
         color = brighter(color)
+        draw3Dbox(image, cam, X, l, w, h, forward, right, up, color)
+
+    # Draw the attempted tracks 
+    for at in attempt:
+        class_name = at['type']
+        if not class_name in classes:
+            continue 
+
+        X, l, w, h = [at[key] for key in "Xlwh"]
+        forward = np.array([at['forward_x'], at['forward_y'], 
+                           at['forward_z'], 0],
+                           dtype=np.float32)
+        right = np.array([*np.cross(forward[0:3], up[0:3]), 0.0], 
+                         dtype=np.float32)
+
+        color = colors[class_name]
         draw3Dbox(image, cam, X, l, w, h, forward, right, up, color)
     
     # Thicker black first, then thin white, very readable 
