@@ -17,6 +17,7 @@ import carla
 from carla import VehicleLightState as vls
 
 from util import loc_dist, vector_normalize, long_str, vector_from_to, scalar_product
+from cameras import build_cam, is_visible, is_obj_visible
 
 @dataclass
 class Scenario:
@@ -339,7 +340,7 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
         cam.listen(closure(sensor_queue, cam_name, start_frame, ims_folder, frame_skip))
         camera = Camera(cam, cam_no, cam_loc, base_rotation, cam_name, transform)
         cameras.append(camera)
-        
+
     # Collect camera positions
     cams_obj = dict()
     cam_obj_list = list()
@@ -355,6 +356,14 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
     cams_obj['cams'] = cam_obj_list 
 
     (scenario_folder / 'cameras.json').write_text(json.dumps(cams_obj, indent=2))
+
+    # Build projection matrix
+    
+    cam = cameras[0]
+    cam_values = {'id': cam.id, 'x':cam.loc.x, 'y':cam.loc.y, 'z':cam.loc.z,
+                  'pitch': cam.dir.pitch, 'roll': cam.dir.roll, 
+                  'yaw': cam.dir.yaw, 'f': f, 'Cx': Cx, 'Cy': Cy}
+    camera_matrix, _ = build_cam(cam_values)
 
     bus_names = ('volkswagen.t2', )
     truck_names = ('carlamotors.firetruck', 'ford.ambulance', 'mercedes.sprinter', 'tesla.cybertruck', 'carlamotors.carlacola')
@@ -383,10 +392,8 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
                 if abs(loc.z) < 2.0: # any further up and we assume they're not on the actual ground 
 
                     # Check if visible in camera
-                    to_loc = vector_from_to(camera.loc, loc)
-                    to_loc = vector_normalize(to_loc)
-                    sp = scalar_product(to_loc, cam_forward)
-                    if sp > 0.0:
+                    if is_visible(loc.x, loc.y, loc.z, camera_matrix, 
+                                  im_h=im_size_y, im_w=im_size_x):
                         ground_points.append(loc)
 
     # Store ground points in file 
@@ -395,6 +402,8 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
 
     # Start recording video
     max_dist_to_include = 80 # in metres
+    min_height_pixels = 10
+
     for frame_no in range(scenario.length*frame_skip):
         # Tick the server
         world.tick()
@@ -421,13 +430,17 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
                 # Ignore those too far away
                 if loc_dist(loc, cameras[0].loc) > max_dist_to_include:
                     continue
+
+                bbox = vehicle.bounding_box
+                l = bbox.extent.x*2
+                w = bbox.extent.y*2
+                h = bbox.extent.z*2
                     
                 # Ignore if not visible in camera
-                to_loc = vector_from_to(cameras[0].loc, loc)
-                to_loc = vector_normalize(to_loc)
-                sp = scalar_product(to_loc, cam_forward)
-                if sp < 0.0:
-                    continue
+                if not is_obj_visible(loc.x, loc.y, loc.z, h, camera_matrix,
+                                      im_h=im_size_y, im_w=im_size_x, 
+                                      min_height=min_height_pixels):
+                    continue 
 
                 vehicle_type = 'car'
                 if any([bn in vehicle.type_id for bn in bus_names]):
@@ -437,11 +450,6 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
                 elif vehicle.attributes['number_of_wheels'] == "2":
                     vehicle_type = 'bicyclist'
                 
-                bbox = vehicle.bounding_box
-                l = bbox.extent.x*2
-                w = bbox.extent.y*2
-                h = bbox.extent.z*2
-
                 if abs(w) < 0.001:
                     # Sometimes bicyclists have zero width due to a Carla bug
                     if vehicle_type == 'bicyclist':
@@ -469,24 +477,23 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
                 if loc_dist(loc, cameras[0].loc) > max_dist_to_include:
                     continue
 
-                # Ignore if not visible in camera
-                to_loc = vector_from_to(cameras[0].loc, loc)
-                to_loc = vector_normalize(to_loc)
-                sp = scalar_product(to_loc, cam_forward)
-                if sp < 0.0:
-                    continue
-
                 bbox = actor.bounding_box
                 l = bbox.extent.x*2
                 w = bbox.extent.y*2
                 h = bbox.extent.z*2
-                
-                v = actor.get_velocity()
-                rot = actor.get_transform().rotation
-                forward = rot.get_forward_vector()
 
                 # Pedestrians' z value is at their middle height for some reason
                 ped_z = loc.z - h/2.0
+
+                # Ignore if not visible in camera
+                if not is_obj_visible(loc.x, loc.y, ped_z, h, camera_matrix,
+                                      im_h=im_size_y, im_w=im_size_x, 
+                                      min_height=min_height_pixels):
+                    continue 
+
+                v = actor.get_velocity()
+                rot = actor.get_transform().rotation
+                forward = rot.get_forward_vector()
 
                 objs.append({'type': 'pedestrian', 'id': pedestrian_id-first_id,
                              'x': loc.x, 'y': loc.y, 'z': ped_z, 'l': l, 'w': w,

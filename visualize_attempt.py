@@ -50,8 +50,10 @@ def brighter(color):
     b = (color[2] + 255) // 2
     return (r, g, b)
 
-def matplotlib_color(color):
-    return [c/256.0 for c in color]
+def matplotlib_color(color, alpha=1.0):
+    new_color = [c/256.0 for c in color]
+    new_color.append(alpha)
+    return new_color
 
 def get_colors(categories:List[str]):
     colors = dict()
@@ -80,6 +82,9 @@ def visualize_attempt(folder:Path, gt_folder:Path, classes:List[str],
     cameras = build_camera_matrices(gt_folder / '..')
     cam = cameras[cam_num]
 
+    ground = np.genfromtxt(gt_folder / '..' / 'ground_points.txt', 
+                           delimiter=',', dtype=np.float32).T
+
     with iio.get_writer(out_path, fps=20) as vid:
         for im_path in images:
             frame_no = int(im_path.stem)
@@ -88,9 +93,9 @@ def visualize_attempt(folder:Path, gt_folder:Path, classes:List[str],
             gt = read_positions(gt_folder / f"{long_str(frame_no, 6)}.json")
 
             frame1 = render_pixel_frame(image, classes, frame_no, attempt, gt, 
-                                        cam, colors)
+                                        cam, colors, ground)
             frame2 = render_topdown_frame(frame1.shape, classes, attempt, gt, 
-                                          colors)
+                                          colors, ground)
             
             frame = np.vstack([frame1, frame2])
             vid.append_data(frame)
@@ -99,15 +104,17 @@ def visualize_attempt(folder:Path, gt_folder:Path, classes:List[str],
                 print(f"{frame_no+1} {100.0*frame_no/n_ims:.2f}%")
 
 def render_topdown_frame(dims:Tuple, classes:List[str], attempt:List[Dict],
-                         ground_truth:List[Dict], colors:Dict):
+                         ground_truth:List[Dict], colors:Dict, 
+                         ground:np.ndarray):
     
     fig = plt.figure()
     ax = fig.add_subplot(111)
     plt.grid(True)
     ax.set_aspect('equal')
 
-    minx, maxx = np.inf, -np.inf 
-    miny, maxy = np.inf, -np.inf 
+    plt.plot(ground[0,:], ground[1,:], '.', ms=1.0)
+    minx, maxx = np.min(ground[0,:]), np.max(ground[0,:])
+    miny, maxy = np.min(ground[1,:]), np.max(ground[1,:])
 
     for gt in ground_truth:
         class_name = gt['type']
@@ -118,8 +125,10 @@ def render_topdown_frame(dims:Tuple, classes:List[str], attempt:List[Dict],
         phi = np.arctan2(gt['forward_y'], gt['forward_x'])
         x, y = X.flatten()[0:2]
 
-        color = matplotlib_color(brighter(colors[class_name]))
-        rect = patches.Rectangle((x, y), l, w, color=color, alpha=0.4)
+        color = brighter(colors[class_name])
+        edge_color = matplotlib_color(color)
+        face_color = matplotlib_color(color, 0.35)
+        rect = patches.Rectangle((x, y), l, w, ec=edge_color, fc=face_color)
         transform = transforms.Affine2D.identity().rotate_around(x, y, phi) + ax.transData
         rect.set_transform(transform)
         ax.add_patch(rect)
@@ -138,8 +147,10 @@ def render_topdown_frame(dims:Tuple, classes:List[str], attempt:List[Dict],
         phi = np.arctan2(at['forward_y'], at['forward_x'])
         x, y = X.flatten()[0:2]
 
-        color = matplotlib_color(colors[class_name])
-        rect = patches.Rectangle((x, y), l, w, color=color, alpha=0.5)
+        color = colors[class_name]
+        edge_color = matplotlib_color(color)
+        face_color = matplotlib_color(color, 0.75)
+        rect = patches.Rectangle((x, y), l, w, ec=edge_color, fc=face_color)
         transform = transforms.Affine2D.identity().rotate_around(x, y, phi) + ax.transData
         rect.set_transform(transform)
         ax.add_patch(rect)
@@ -163,7 +174,17 @@ def render_topdown_frame(dims:Tuple, classes:List[str], attempt:List[Dict],
 
 def render_pixel_frame(image:np.ndarray, classes:List[str], frame_no:int, 
                        attempt:List[Dict], ground_truth:List[Dict], 
-                       cam:np.ndarray, colors:Dict):
+                       cam:np.ndarray, colors:Dict, ground:np.ndarray):
+
+    # Draw ground points 
+    n = ground.shape[1]
+    new_ground = np.ones((4, n), dtype=np.float32)
+    new_ground[0:3, :] = ground
+    ground2D = pflat(cam @ new_ground)
+    for i in range(n):
+        gnd = ground2D[:, i]
+        pnt = (intr(gnd[0]), intr(gnd[1]))
+        cv2.drawMarker(image, pnt, (255,255,255), cv2.MARKER_CROSS, 2)
 
     up = np.array([0,0,1,0], dtype=np.float32)
 

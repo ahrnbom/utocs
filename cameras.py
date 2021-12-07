@@ -33,7 +33,7 @@ def build_camera_matrices(folder:Path, output_K=False):
     return cameras
 
 def build_cam(values):
-    flip = np.array([[ 0,  1,  0 ], [ 0,  0, -1 ], [ 1,  0,  0 ]], dtype=np.float32)
+    flip = np.array([[ 0, 1, 0 ], [ 0, 0, -1 ], [ 1, 0, 0 ]], dtype=np.float32)
 
     x = values['x']
     y = values['y']
@@ -85,3 +85,28 @@ def euler_angles(phi, theta, psi):
          [cos(theta)*sin(psi), cos(phi)*cos(psi)+sin(phi)*sin(theta)*sin(psi), -sin(phi)*cos(psi)+cos(phi)*sin(theta)*sin(psi)],
          [-sin(theta),            sin(phi)*cos(theta),             cos(phi)*cos(theta)]]
     return np.array(R, dtype=np.float32)
+
+def is_visible(x, y, z, P, im_h=720, im_w=1280):
+    point = np.array([x, y, z, 1.0], dtype=np.float32).reshape((4,1))
+    proj = pflat(P @ point).flatten()
+    px, py = proj[0:2]
+    if px >= 0 and px <= im_w and py >= 0 and py <= im_h:
+        return True 
+    
+    return False 
+
+def is_obj_visible(x, y, z, height, P, im_h=720, im_w=1280, min_height=10.0):
+    point = np.array([x, y, z, 1.0], dtype=np.float32).reshape((4,1))
+    proj = pflat(P @ point).flatten()
+    px, py = proj[0:2]
+    if px >= 0 and px <= im_w and py >= 0 and py <= im_h:
+        delta_height = np.array([0,0,height,0], dtype=np.float32).reshape((4,1))
+        new_point = point + delta_height
+        proj2 = pflat(P @ new_point)
+        py2 = proj2[1]
+
+        pixel_height = abs(py2 - py)
+        if pixel_height >= min_height:
+            return True 
+    
+    return False 
