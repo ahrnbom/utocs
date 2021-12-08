@@ -321,12 +321,17 @@ if __name__ == "__main__":
                       help="Path of ground truth",)
     args.add_argument("--set", type=str, default='test',
                       help="Either 'training', 'validation' or 'test")
+    args.add_argument("--seqs", type=str, default="", help="Set to only run "\
+                      "these sequences. Should be comma-separated, like "\
+                      "'0003,0027'.")
     args.add_argument("--classes", type=str, default="",
                       help="Set to a comma-separated list of classes to only " \
                            "visualize those")
     args.add_argument("--export", action="store_true", help="Include to write "\
                       "the video in the folder with the track. Otherwise, "\
                       "it will be written in the folder 'output'")
+    args.add_argument("--processes", help="Number of processes to spawn, " \
+                      "0 means single-threaded.", default=0, type=int)
     args = args.parse_args()
 
     if not args.folder:
@@ -341,17 +346,25 @@ if __name__ == "__main__":
     else:
         classes = ['car', 'truck', 'bus', 'bicyclist', 'pedestrian']
 
-    assert which_set in ['training', 'validation', 'test']
+    assert which_set in ['training', 'validation', 'test', 'all']
     seq_nums = get_seqnums()
     
-    for seq_num in seq_nums[which_set]:
+    seq_nums['all'] = seq_nums['training'] + seq_nums['validation'] + \
+                      seq_nums['test']
+
+    to_visualize = list()
+
+    seqs_to_run = seq_nums[which_set]
+    if args.seqs:
+        seqs_to_run = [int(s) for s in args.seqs.split(',')]
+
+    for seq_num in seqs_to_run:
         seq = gt_folder / 'scenarios' / long_str(seq_num, 4)
         if folder is not None:
             _folder = folder / seq.name
         else:
             _folder = None 
         _gtfolder = seq / 'positions'
-        print(f"Visualizing {seq_num} from {which_set} for run {folder}")
 
         if args.export:
             if folder is None:
@@ -370,4 +383,14 @@ if __name__ == "__main__":
                 out_path = out_folder / "utocs_visualization_" \
                                         f"{folder.name}_{seq_num}.mp4"
 
-        visualize(_folder, _gtfolder, classes, seq_num, out_path)
+        to_visualize.append( (_folder, _gtfolder, classes, seq_num, out_path) )
+    
+    if args.processes == 0:
+        for vis in to_visualize:
+            visualize(*vis)
+    else:
+        from multiprocessing import Pool 
+        import os 
+        os.nice(10)
+        with Pool(args.processes) as pool:
+            pool.starmap(visualize, to_visualize)
