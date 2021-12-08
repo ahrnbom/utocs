@@ -43,7 +43,7 @@ To run evaluation, simply run `python3 eval.py --folder PATH/TO/METHOD/FOLDER` a
 - When generating images with multiple cameras, make sure to use quotes (`'`) around the argument. Otherwise, your shell will likely interpret the semicolons (`;`) as splitting the different commands. An example of a correct command for stereo images is `python3 start.py --cam_setup '0,0,0;0.5,0,0'`, which will give you a stereo setup with 0.5 m between the two cameras, horizontally. The format uses three coordinates to allow exotic camera configurations; to make a stereo camera where the two cameras are placed above each other, use something like `0,0,0;0,0.5;0` and similarly, `0,0,0;0,0,0.5` will give a setup where one of the cameras is placed in front of the other one (which is somewhat unrealistic).
 - For a monocular view, the entire dataset is approximately 70 GiB in size. 
 - The tracking method to be evaluated is allowed (and supposed) to use the camera calibration and ground points for computing the tracks. The method is not allowed to use the positions text files from the test set in any way prior to evaluation. 
-- It is the *responsibility of your method* to remove tracks without significant motion, or those that are further than 80 metres away from the camera center of camera 0.
+- It is the *responsibility of your method* to remove tracks without significant motion, or those that are further than 80 metres away from the camera center of camera 0, or those who appear to have a height for lower than 10 pixels in camera 0.
 
 ### Dataset Download
 If you are unable or unwilling to run the UTOCS code to generate the dataset, you can also download the dataset from this link, with only a monocular view:

@@ -303,11 +303,11 @@ def render_pixel_frame(image:np.ndarray, classes:List[str], frame_no:int,
             color = colors[class_name]
             draw3Dbox(image, cam, X, l, w, h, forward, right, up, color)
         
-        # Thicker black first, then thin white, very readable 
-        cv2.putText(image, f"Frame {frame_no}", (10,20), cv2.FONT_HERSHEY_PLAIN, 
-                    1.5, (0,0,0), 2, cv2.LINE_AA)
-        cv2.putText(image, f"Frame {frame_no}", (10,20), cv2.FONT_HERSHEY_PLAIN, 
-                    1.5, (255,255,255), 1, cv2.LINE_AA)
+    # Thicker black first, then thin white, very readable 
+    cv2.putText(image, f"Frame {frame_no}", (10,20), cv2.FONT_HERSHEY_PLAIN, 
+                1.5, (0,0,0), 2, cv2.LINE_AA)
+    cv2.putText(image, f"Frame {frame_no}", (10,20), cv2.FONT_HERSHEY_PLAIN, 
+                1.5, (255,255,255), 1, cv2.LINE_AA)
 
     return image 
 
