@@ -146,7 +146,7 @@ def main():
     args.add_argument("--set", type=str, default='test',
                       help="Either 'training', 'validation' or 'test")
     args.add_argument("--classes", type=str, default="",
-                      help="Set to a comma-separated list of classes to only" \
+                      help="Set to a comma-separated list of classes to only " \
                            "evaluate those")
     args.add_argument("--iou_thresh", type=float, default=0.25,
                       help="Usually 0.25, how much the road user's rotated " \
