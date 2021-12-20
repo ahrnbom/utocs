@@ -175,6 +175,21 @@ def visualize(folder:Path, gt_folder:Path, classes:List[str],
                 print(f"Frame {frame_no+1}, {100.0*frame_no/n_ims:.2f}%, " \
                       f"Sequence: {seq_num}")
 
+def rotated_rectangle(x, y, l, w, phi, edge_color, face_color):
+    positions = list()
+    base_pos = np.array([x, y], dtype=np.float32)
+    forward = np.array([np.cos(phi), np.sin(phi)], dtype=np.float32)
+    right = np.array([[0, -1], [1, 0]], dtype=np.float32) @ forward 
+    for il, ii in zip((-0.5, 0.5), (1.0, -1.0)):
+        ll = il * l * forward 
+        for iw in (-0.5, 0.5):
+            ww = ii*iw * w * right 
+            new_pos = base_pos + ll + ww 
+            positions.append((new_pos[0], new_pos[1]))
+    xy = np.array(positions, dtype=np.float32)
+    rect = patches.Polygon(xy, closed=False, ec=edge_color, fc=face_color)
+    return rect 
+
 def render_topdown_frame(dims:Tuple, classes:List[str], attempt:List[Dict],
                          ground_truth:List[Dict], cam:np.ndarray, colors:Dict, 
                          ground:np.ndarray):
@@ -200,10 +215,7 @@ def render_topdown_frame(dims:Tuple, classes:List[str], attempt:List[Dict],
         color = brighter(colors[class_name])
         edge_color = matplotlib_color(color)
         face_color = matplotlib_color(color, 0.35)
-        rect = patches.Rectangle((x, y), l, w, ec=edge_color, fc=face_color)
-        transform = transforms.Affine2D.identity().rotate_around(x, y, phi) \
-                    + ax.transData
-        rect.set_transform(transform)
+        rect = rotated_rectangle(x, y, l, w, phi, edge_color, face_color)
         ax.add_patch(rect)
 
         minx = min(minx, x)
@@ -224,10 +236,7 @@ def render_topdown_frame(dims:Tuple, classes:List[str], attempt:List[Dict],
             color = colors[class_name]
             edge_color = matplotlib_color(color)
             face_color = matplotlib_color(color, 0.75)
-            rect = patches.Rectangle((x, y), l, w, ec=edge_color, fc=face_color)
-            transform = transforms.Affine2D.identity().rotate_around(x, y, phi)\
-                        + ax.transData
-            rect.set_transform(transform)
+            rect = rotated_rectangle(x, y, l, w, phi, edge_color, face_color)
             ax.add_patch(rect)
 
             minx = min(minx, x)
