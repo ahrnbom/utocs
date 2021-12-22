@@ -1,6 +1,8 @@
 from math import sqrt
+from typing import List
 import numpy as np 
 import carla
+import io 
 
 def loc_dist(a, b):
     return sqrt((a.x - b.x)**2 + (a.y - b.y)**2 + (a.z - b.z)**2)
@@ -31,11 +33,11 @@ def normalize_numpy_vector(x: np.ndarray):
 
 # long_str(2) -> '0002'
 # long_str(42, 3) -> '042'
-def long_str(i:int, N:int=4):
+def long_str(i:int, N:int=4, padding='0'):
     s = str(i)
     n = len(s)
     if n < N:
-        s = '0'*(N-n) + s 
+        s = padding*(N-n) + s 
     
     return s 
 
@@ -58,3 +60,18 @@ def pflat(x):
     else:
         x /= x[-1, :]
     return x
+
+def print_table(row_names:List[str], col_names:List[str], matrix:np.ndarray):
+    row_names = np.array(row_names, dtype=str).reshape((len(row_names), 1))
+    matrix = np.hstack([row_names, matrix])
+    col_names = np.array(['', *col_names], dtype=str)
+    col_names = col_names.reshape((1, len(col_names)))
+    matrix = np.vstack([col_names, matrix])
+
+    max_len = max([len(v) for v in matrix.flatten()])
+    for i in range(matrix.shape[0]):
+        for j in range(matrix.shape[1]):
+            matrix[i, j] = long_str(matrix[i,j], max_len, padding=' ')
+
+    print(np.array2string(matrix, max_line_width=200))
+    

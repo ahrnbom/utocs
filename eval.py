@@ -13,7 +13,7 @@ from pathlib import Path
 import json 
 import argparse
 
-from util import long_str, vector_dist, pflat 
+from util import long_str, vector_dist, pflat, print_table
 from cameras import build_camera_matrices
 
 
@@ -140,7 +140,8 @@ def main():
     args = argparse.ArgumentParser()
 
     args.add_argument("--folder", type=str,
-                      help="Path to folder with the tracks to be evaluated")
+                      help="Path to folder with the tracks to be evaluated, " \
+                           "can also be multiple ones separated by commas")
     args.add_argument("--gt_folder",  default="./output", type=str,
                       help="Path of ground truth",)
     args.add_argument("--set", type=str, default='test',
@@ -151,14 +152,13 @@ def main():
     args.add_argument("--iou_thresh", type=float, default=0.25,
                       help="Usually 0.25, how much the road user's rotated " \
                            "rectangles must overlap to consider it a hit", )
-    args.add_argument("--quiet", action="store_true", 
-                      help="Include to only output the final average MOTA")
     args = args.parse_args()
 
-    folder = Path(args.folder)
+    folders = [Path(f) for f in args.folder.split(',')]
+    for folder in folders:
+        assert folder.is_dir(), f"Cannot file folder {folder}"
     gt_folder = Path(args.gt_folder)
     iou_thresh = args.iou_thresh
-    verbose = not args.quiet
     which_set = args.set
 
     if args.classes:
@@ -169,20 +169,26 @@ def main():
 
     assert which_set in ['training', 'validation', 'test']
     seq_nums = get_seqnums()
-
-    motas = list()
-    for seq_num in seq_nums[which_set]:
+    seqs = seq_nums[which_set]
+    motas = np.zeros((len(seqs), len(folders)), dtype=np.float32)
+    for i_seq, seq_num in enumerate(seqs):
         seq = gt_folder / 'scenarios' / long_str(seq_num, 4)
+        for i_folder, folder in enumerate(folders):
+            mota = evaluate_scenario(folder / seq.name, 
+                                    seq / 'positions',
+                                    iou_thresh, name=f"{folder.name}{seq_num}", 
+                                    classes=classes,
+                                    verbose=False)
+            
+            motas[i_seq, i_folder] = mota 
+        
+        print_table(seqs[:i_seq+1], [f.name for f in folders], 
+                    motas[:i_seq+1, :])
+        print("")
 
-        mota = evaluate_scenario(folder / seq.name, 
-                                 seq / 'positions',
-                                 iou_thresh, name=f"{folder.name}{seq_num}", 
-                                 classes=classes,
-                                 verbose=verbose)
-        motas.append(mota)
-
-    mean_mota = np.mean(motas)
-    print(f"Average MOTA for method {folder.name} is {mean_mota}")
+    for i_folder, folder in enumerate(folders):    
+        mean_mota = np.mean(motas[:, i_folder])
+        print(f"Average MOTA for method {folder.name} is {mean_mota}")
 
 if __name__=="__main__":
     main()

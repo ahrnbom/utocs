@@ -101,7 +101,7 @@ def build3Dbox(X, l, w, h, forward, right, up):
     return points3D
 
 
-def draw3Dbox(im, P, X, l, w, h, forward, right, up, color=(255,0,0)):
+def draw3Dbox(im, P, X, l, w, h, forward, right, up, color=(255,0,0), text=""):
     points3D = build3Dbox(X, l, w, h, forward, right, up)
 
     for indices in [(0,1,3,2), (4,5,7,6), (0,4,5,1), (2,6,7,3), (0,4,6,2), 
@@ -135,6 +135,12 @@ def draw3Dbox(im, P, X, l, w, h, forward, right, up, color=(255,0,0)):
     point = (xf, yf)
     cv2.drawMarker(im, point, darker(color), cv2.MARKER_TRIANGLE_UP, 8, 2, 
                    cv2.LINE_AA)
+
+    if text:
+        cv2.putText(im, text, point, cv2.FONT_HERSHEY_PLAIN, 1.0, darker(color),
+                    2, cv2.LINE_AA)
+        cv2.putText(im, text, point, cv2.FONT_HERSHEY_PLAIN, 1.0, (255,255,255),
+                    1, cv2.LINE_AA)
 
 def visualize(folder:Path, gt_folder:Path, classes:List[str], 
               seq_num:int, out_path:Path, cam_num=0):
@@ -239,6 +245,8 @@ def render_topdown_frame(dims:Tuple, classes:List[str], attempt:List[Dict],
             rect = rotated_rectangle(x, y, l, w, phi, edge_color, face_color)
             ax.add_patch(rect)
 
+            plt.text(x, y, f"{at['type']}{at['id']}")
+
             minx = min(minx, x)
             miny = min(miny, y)
             maxx = max(maxx, x)
@@ -310,7 +318,8 @@ def render_pixel_frame(image:np.ndarray, classes:List[str], frame_no:int,
                             dtype=np.float32)
 
             color = colors[class_name]
-            draw3Dbox(image, cam, X, l, w, h, forward, right, up, color)
+            draw3Dbox(image, cam, X, l, w, h, forward, right, up, color, 
+                      text=f"{at['type']}{at['id']}")
         
     # Thicker black first, then thin white, very readable 
     cv2.putText(image, f"Frame {frame_no}", (10,20), cv2.FONT_HERSHEY_PLAIN, 
