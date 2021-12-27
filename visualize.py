@@ -54,7 +54,7 @@ def good_resize(im, new_h, new_w):
     dh = int_split2(new_h - h2)
     dw = int_split2(new_w - w2)
 
-    new_im = np.pad(im, (dh, dw, (0,0)))
+    new_im = np.pad(im, (dh, dw, (0,0)), constant_values=255)
     return new_im 
 
 def brighter(color):
@@ -165,16 +165,16 @@ def visualize(folder:Path, gt_folder:Path, classes:List[str],
             if folder is not None:
                 attempt = read_positions(folder /   
                                          f"{long_str(frame_no, 6)}.json")
-                gt_text = False # avoids clutter
+                gt_mode = False # avoids clutter
             else:
                 attempt = None
-                gt_text = True
+                gt_mode = True
             gt = read_positions(gt_folder / f"{long_str(frame_no, 6)}.json")
 
             frame1 = render_pixel_frame(image, classes, frame_no, attempt, gt, 
-                                        cam, colors, ground, gt_text=gt_text)
+                                        cam, colors, ground, gt_mode=gt_mode)
             frame2 = render_topdown_frame(frame1.shape, classes, attempt, gt, 
-                                          cam, colors, ground, gt_text=gt_text)
+                                          cam, colors, ground, gt_mode=gt_mode)
             
             frame = np.vstack([frame1, frame2])
             vid.append_data(frame)
@@ -195,12 +195,12 @@ def rotated_rectangle(x, y, l, w, phi, edge_color, face_color):
             new_pos = base_pos + ll + ww 
             positions.append((new_pos[0], new_pos[1]))
     xy = np.array(positions, dtype=np.float32)
-    rect = patches.Polygon(xy, closed=False, ec=edge_color, fc=face_color)
+    rect = patches.Polygon(xy, closed=True, ec=edge_color, fc=face_color)
     return rect 
 
 def render_topdown_frame(dims:Tuple, classes:List[str], attempt:List[Dict],
                          ground_truth:List[Dict], cam:np.ndarray, colors:Dict, 
-                         ground:np.ndarray, gt_text=False):
+                         ground:np.ndarray, gt_mode=False):
     
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -220,13 +220,17 @@ def render_topdown_frame(dims:Tuple, classes:List[str], attempt:List[Dict],
         phi = np.arctan2(gt['forward_y'], gt['forward_x'])
         x, y = X.flatten()[0:2]
 
-        color = brighter(colors[class_name])
+        color = colors[class_name]
+        alpha = 0.35
+        if not gt_mode:
+            color = brighter(color)
+            alpha = 0.5
         edge_color = matplotlib_color(color)
-        face_color = matplotlib_color(color, 0.35)
+        face_color = matplotlib_color(color, alpha)
         rect = rotated_rectangle(x, y, l, w, phi, edge_color, face_color)
         ax.add_patch(rect)
 
-        if gt_text:
+        if gt_mode:
             plt.text(x, y, f"{gt['type']}{gt['id']}")
 
         minx = min(minx, x)
@@ -278,7 +282,7 @@ def render_topdown_frame(dims:Tuple, classes:List[str], attempt:List[Dict],
 def render_pixel_frame(image:np.ndarray, classes:List[str], frame_no:int, 
                        attempt:List[Dict], ground_truth:List[Dict], 
                        cam:np.ndarray, colors:Dict, ground:np.ndarray, 
-                       gt_text=False):
+                       gt_mode=False):
 
     # Draw ground points 
     n = ground.shape[1]
@@ -306,10 +310,11 @@ def render_pixel_frame(image:np.ndarray, classes:List[str], frame_no:int,
                          dtype=np.float32)
 
         color = colors[class_name]
-        color = brighter(color)
+        if not gt_mode:
+            color = brighter(color)
         
         text = ""
-        if gt_text:
+        if gt_mode:
             text=f"{gt['type']}{gt['id']}"
         draw3Dbox(image, cam, X, l, w, h, forward, right, up, color, text=text)
 
