@@ -165,14 +165,16 @@ def visualize(folder:Path, gt_folder:Path, classes:List[str],
             if folder is not None:
                 attempt = read_positions(folder /   
                                          f"{long_str(frame_no, 6)}.json")
+                gt_text = False # avoids clutter
             else:
-                attempt = None 
+                attempt = None
+                gt_text = True
             gt = read_positions(gt_folder / f"{long_str(frame_no, 6)}.json")
 
             frame1 = render_pixel_frame(image, classes, frame_no, attempt, gt, 
-                                        cam, colors, ground)
+                                        cam, colors, ground, gt_text=gt_text)
             frame2 = render_topdown_frame(frame1.shape, classes, attempt, gt, 
-                                          cam, colors, ground)
+                                          cam, colors, ground, gt_text=gt_text)
             
             frame = np.vstack([frame1, frame2])
             vid.append_data(frame)
@@ -198,7 +200,7 @@ def rotated_rectangle(x, y, l, w, phi, edge_color, face_color):
 
 def render_topdown_frame(dims:Tuple, classes:List[str], attempt:List[Dict],
                          ground_truth:List[Dict], cam:np.ndarray, colors:Dict, 
-                         ground:np.ndarray):
+                         ground:np.ndarray, gt_text=False):
     
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -223,6 +225,9 @@ def render_topdown_frame(dims:Tuple, classes:List[str], attempt:List[Dict],
         face_color = matplotlib_color(color, 0.35)
         rect = rotated_rectangle(x, y, l, w, phi, edge_color, face_color)
         ax.add_patch(rect)
+
+        if gt_text:
+            plt.text(x, y, f"{gt['type']}{gt['id']}")
 
         minx = min(minx, x)
         miny = min(miny, y)
@@ -272,7 +277,8 @@ def render_topdown_frame(dims:Tuple, classes:List[str], attempt:List[Dict],
 
 def render_pixel_frame(image:np.ndarray, classes:List[str], frame_no:int, 
                        attempt:List[Dict], ground_truth:List[Dict], 
-                       cam:np.ndarray, colors:Dict, ground:np.ndarray):
+                       cam:np.ndarray, colors:Dict, ground:np.ndarray, 
+                       gt_text=False):
 
     # Draw ground points 
     n = ground.shape[1]
@@ -301,7 +307,11 @@ def render_pixel_frame(image:np.ndarray, classes:List[str], frame_no:int,
 
         color = colors[class_name]
         color = brighter(color)
-        draw3Dbox(image, cam, X, l, w, h, forward, right, up, color)
+        
+        text = ""
+        if gt_text:
+            text=f"{gt['type']}{gt['id']}"
+        draw3Dbox(image, cam, X, l, w, h, forward, right, up, color, text=text)
 
     # Draw the attempted tracks 
     if attempt is not None:
@@ -338,7 +348,7 @@ if __name__ == "__main__":
     args.add_argument("--gt_folder",  default="./output", type=str,
                       help="Path of ground truth",)
     args.add_argument("--set", type=str, default='test',
-                      help="Either 'training', 'validation' or 'test")
+                      help="Either 'training', 'validation' or 'test''")
     args.add_argument("--seqs", type=str, default="", help="Set to only run "\
                       "these sequences. Should be comma-separated, like "\
                       "'0003,0027'.")

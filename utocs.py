@@ -329,6 +329,9 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
     start_frame = world.get_snapshot().frame
     cam_bp = world.get_blueprint_library().find('sensor.camera.rgb')
     
+    # Instance segmentation camera:
+    #iscam_bp = world.get_blueprint_library().find('sensor.camera.instance_segmentation')
+    
     cam_bp.set_attribute('image_size_x', str(im_size_x))
     cam_bp.set_attribute('image_size_y', str(im_size_y))
     cam_bp.set_attribute('fov', str(fov))
