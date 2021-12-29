@@ -34,6 +34,13 @@ def get_seqnums():
         seq_nums[set_name] = [int(v) for v in splot[1].split(' ')]
     return seq_nums 
 
+def euclidean_dist3D(gt:RoadUser, ru:RoadUser):
+    if gt.type == ru.type:
+        dist = vector_dist(gt.X[0:2], ru.X[0:2])
+        return dist 
+    else:
+        return np.nan
+
 def iou_dist3D(gt:RoadUser, ru:RoadUser, min_iou:float) -> float:
     if gt.type == ru.type:
         iou = iou3D(gt, ru)
@@ -102,7 +109,8 @@ def evaluate_scenario(tr_folder:Path,
                       min_iou:float=0.25,
                       name:str='some_tracker',
                       classes=None,
-                      verbose=True) -> float:
+                      verbose=True,
+                      metric='iou') -> float:
 
     acc = mm.MOTAccumulator(auto_id=True)
 
@@ -121,7 +129,10 @@ def evaluate_scenario(tr_folder:Path,
         for g in gt_instances:
             these_dists = list()
             for t in tr_instances:
-                dist = iou_dist3D(g, t, min_iou)
+                if metric == 'iou':
+                    dist = iou_dist3D(g, t, min_iou)
+                elif metric == 'euclidean':
+                    dist = euclidean_dist3D(g, t)
                 these_dists.append(dist)
             dists.append(these_dists)
 
@@ -151,7 +162,10 @@ def main():
                            "evaluate those")
     args.add_argument("--iou_thresh", type=float, default=0.25,
                       help="Usually 0.25, how much the road user's rotated " \
-                           "rectangles must overlap to consider it a hit", )
+                           "rectangles must overlap to consider it a hit, " \
+                            "only relevant if metric is iou")
+    args.add_argument("--metric", type=str, default="iou",
+                      help="Either 'iou' or 'euclidean'")
     args = args.parse_args()
 
     folders = [Path(f) for f in args.folder.split(',')]
@@ -160,6 +174,9 @@ def main():
     gt_folder = Path(args.gt_folder)
     iou_thresh = args.iou_thresh
     which_set = args.set
+    metric = args.metric
+
+    assert metric in ['iou', 'euclidean']
 
     if args.classes:
         classes = args.classes.split(',')
@@ -178,7 +195,8 @@ def main():
                                     seq / 'positions',
                                     iou_thresh, name=f"{folder.name}{seq_num}", 
                                     classes=classes,
-                                    verbose=False)
+                                    verbose=False,
+                                    metric=metric)
             
             motas[i_seq, i_folder] = mota 
         
