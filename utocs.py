@@ -45,115 +45,163 @@ def default_scenarios():
     scenarios = list()
 
     # 0 
-    s = Scenario(map='Town01', cam_pos=(101.38188171386719,183.1450958251953,7.839078903198242), cam_dir=(-24.54534149169922,130.83407592773438,4.599098247126676e-05), length=4000)
+    s = Scenario(map='Town04', cam_pos=(193.04466247558594,-257.2019958496094,7.6563401222229), cam_dir=(-43.125633239746094,50.72932815551758,2.5735223971423693e-05), length=3000)
     scenarios.append(s)
 
     # 1 
-    s = Scenario(map='Town10HD', cam_pos=(-51.66246032714844,154.75738525390625,13.823832511901855), cam_dir=(-27.47414779663086,-86.13775634765625,0.00011643866309896111), length=4000)
+    s = Scenario(map='Town10HD', cam_pos=(-51.66246032714844,154.75738525390625,13.823832511901855), cam_dir=(-27.47414779663086,-86.13775634765625,0.00011643866309896111), length=3000)
     scenarios.append(s)
 
     # 2 
-    s = Scenario(map='Town10HD', cam_pos=(-63.60895919799805,105.49251556396484,14.712573051452637), cam_dir=(-51.93895721435547,1.8427033424377441,6.924353215254087e-07), length=4000)
+    s = Scenario(map='Town10HD', cam_pos=(-63.60895919799805,105.49251556396484,14.712573051452637), cam_dir=(-51.93895721435547,1.8427033424377441,6.924353215254087e-07), length=3000)
     scenarios.append(s)
 
     # 3
-    s = Scenario(map='Town10HD', cam_pos=(-47.0649299621582,-40.33244705200195,11.453038215637207), cam_dir=(-36.29405975341797,-88.5447998046875,0.00011016575444955379), length=4000)
+    s = Scenario(map='Town10HD', cam_pos=(-47.0649299621582,-40.33244705200195,11.453038215637207), cam_dir=(-36.29405975341797,-88.5447998046875,0.00011016575444955379), length=3000)
     scenarios.append(s)
 
     # 4
-    s = Scenario(map='Town10HD', cam_pos=(104.66220092773438,-8.18765640258789,8.137160301208496), cam_dir=(-25.95864486694336,97.4450912475586,0.00011489871394587681), length=4000)
+    s = Scenario(map='Town10HD', cam_pos=(-112.13251495361328,119.8772201538086,12.588258743286133), cam_dir=(-48.381961822509766,-8.009498596191406,6.395316449925303e-05), length=3000)
     scenarios.append(s)
 
     # 5
-    s = Scenario(map='Town02', cam_pos=(37.02091598510742,246.881103515625,9.387005805969238), cam_dir=(-41.42270278930664,-33.86310958862305,3.529641617205925e-05), length=4000)
+    s = Scenario(map='Town02', cam_pos=(37.02091598510742,246.881103515625,9.387005805969238), cam_dir=(-41.42270278930664,-33.86310958862305,3.529641617205925e-05), length=3000)
     scenarios.append(s)
 
     # 6
-    s = Scenario(map='Town02', cam_pos=(122.1256332397461,183.66986083984375,9.662296295166016), cam_dir=(-40.59231185913086,47.09394836425781,7.083312084432691e-05), length=4000)
+    s = Scenario(map='Town02', cam_pos=(122.1256332397461,183.66986083984375,9.662296295166016), cam_dir=(-40.59231185913086,47.09394836425781,7.083312084432691e-05), length=3000)
     scenarios.append(s)
 
     # 7
-    s = Scenario(map='Town03', cam_pos=(-14.29495620727539,31.68166160583496,16.79800033569336), cam_dir=(-51.126773834228516,-25.994699478149414,3.4009499358944595e-05), length=4000)
+    s = Scenario(map='Town03', cam_pos=(-14.29495620727539,31.68166160583496,16.79800033569336), cam_dir=(-51.126773834228516,-25.994699478149414,3.4009499358944595e-05), length=3000)
     scenarios.append(s)
 
     # 8 
-    s = Scenario(map='Town03', cam_pos=(-99.9942626953125,13.837921142578125,18.240234375), cam_dir=(-50.94935989379883,-21.88389778137207,3.7945083022350445e-05), length=4000)
+    s = Scenario(map='Town03', cam_pos=(-99.9942626953125,13.837921142578125,18.240234375), cam_dir=(-50.94935989379883,-21.88389778137207,3.7945083022350445e-05), length=3000)
     scenarios.append(s)
 
     # 9
-    s = Scenario(map='Town03', cam_pos=(-156.63992309570312,-11.973634719848633,8.718941688537598), cam_dir=(-40.18968963623047,46.936527252197266,2.570556716818828e-05), length=4000)
+    s = Scenario(map='Town03', cam_pos=(-156.63992309570312,-11.973634719848633,8.718941688537598), cam_dir=(-40.18968963623047,46.936527252197266,2.570556716818828e-05), length=3000)
     scenarios.append(s)
 
     # 10 
-    s = Scenario(map='Town04', cam_pos=(135.82525634765625,-183.5204315185547,7.379964828491211), cam_dir=(-34.587493896484375,125.46703338623047,2.385247171332594e-05), length=4000)
+    s = Scenario(map='Town10HD', cam_pos=(-91.20193481445312,37.65811538696289,13.142256736755371), cam_dir=(-49.871089935302734,-139.0921173095703,0.00019340438302606344), length=3000)
     scenarios.append(s)
 
     # 11 
-    s = Scenario(map='Town05', cam_pos=(21.694469451904297,-13.837503433227539,14.421462059020996), cam_dir=(-47.781150817871094,65.34835815429688,-2.5411281967535615e-06), length=4000)
+    s = Scenario(map='Town05', cam_pos=(21.694469451904297,-13.837503433227539,14.421462059020996), cam_dir=(-47.781150817871094,65.34835815429688,-2.5411281967535615e-06), length=3000)
     scenarios.append(s)
 
     # 12 
-    s = Scenario(map='Town05', cam_pos=(19.721576690673828,-102.66522979736328,16.00419807434082), cam_dir=(-48.494869232177734,55.754634857177734,1.5460213035112247e-05), length=4000)
+    s = Scenario(map='Town05', cam_pos=(19.721576690673828,-102.66522979736328,16.00419807434082), cam_dir=(-48.494869232177734,55.754634857177734,1.5460213035112247e-05), length=3000)
     scenarios.append(s)
 
     # 13 
-    s = Scenario(map='Town10HD', cam_pos=(-31.958253860473633,8.491209983825684,13.220589637756348), cam_dir=(-46.652000427246094,143.56369018554688,2.611964191601146e-05), length=4000)
+    s = Scenario(map='Town10HD', cam_pos=(116.15340423583984,77.90415954589844,12.076078414916992), cam_dir=(-48.265743255615234,-147.64822387695312,9.106213110499084e-05), length=3000)
     scenarios.append(s)
 
     # 14 
-    s = Scenario(map='Town10HD', cam_pos=(-56.86170959472656,41.37298583984375,13.404866218566895), cam_dir=(-44.32744216918945,69.0594482421875,7.877043390180916e-05), length=4000)
+    s = Scenario(map='Town10HD', cam_pos=(-56.86170959472656,41.37298583984375,13.404866218566895), cam_dir=(-44.32744216918945,69.0594482421875,7.877043390180916e-05), length=3000)
     scenarios.append(s)
 
     # 15 
-    s = Scenario(map='Town10HD', cam_pos=(51.79150390625,56.6481819152832,8.31950855255127), cam_dir=(-38.744956970214844,137.55307006835938,2.8461327019613236e-05), length=4000)
+    s = Scenario(map='Town10HD', cam_pos=(51.79150390625,56.6481819152832,8.31950855255127), cam_dir=(-38.744956970214844,137.55307006835938,2.8461327019613236e-05), length=3000)
     scenarios.append(s)
 
     # 16
-    s = Scenario(map='Town02', cam_pos=(173.74713134765625,119.1712646484375,7.785608291625977), cam_dir=(-28.29818344116211,-26.61002540588379,6.108825618866831e-05), length=4000)
+    s = Scenario(map='Town02', cam_pos=(173.74713134765625,119.1712646484375,7.785608291625977), cam_dir=(-28.29818344116211,-26.61002540588379,6.108825618866831e-05), length=3000)
     scenarios.append(s)
 
     # 17 
-    s = Scenario(map='Town02', cam_pos=(-9.025032043457031,104.06327819824219,7.86112117767334), cam_dir=(-29.11554527282715,44.28169631958008,6.645367102464661e-05), length=4000)
+    s = Scenario(map='Town02', cam_pos=(-9.025032043457031,104.06327819824219,7.86112117767334), cam_dir=(-29.11554527282715,44.28169631958008,6.645367102464661e-05), length=3000)
     scenarios.append(s)
 
     # 18
-    s = Scenario(map='Town05', cam_pos=(-140.45082092285156,80.63668823242188,24.408430099487305), cam_dir=(-62.266754150390625,33.93044662475586,0.0005559046985581517), length=4000)
+    s = Scenario(map='Town05', cam_pos=(-140.45082092285156,80.63668823242188,24.408430099487305), cam_dir=(-62.266754150390625,33.93044662475586,0.0005559046985581517), length=3000)
     scenarios.append(s)
 
     # 19 
-    s = Scenario(map='Town10HD', cam_pos=(-59.03020477294922,35.21854782104492,13.662759780883789), cam_dir=(-47.19268035888672,-47.13734436035156,6.533325358759612e-05), length=4000)
+    s = Scenario(map='Town10HD', cam_pos=(-59.03020477294922,35.21854782104492,13.662759780883789), cam_dir=(-47.19268035888672,-47.13734436035156,6.533325358759612e-05), length=3000)
     scenarios.append(s)
 
     # 20 
-    s = Scenario(map='Town10HD', cam_pos=(33.16043472290039,42.02176284790039,24.430490493774414), cam_dir=(-53.3353271484375,-63.22784423828125,4.861298293690197e-05), length=4000)
+    s = Scenario(map='Town10HD', cam_pos=(33.16043472290039,42.02176284790039,24.430490493774414), cam_dir=(-53.3353271484375,-63.22784423828125,4.861298293690197e-05), length=3000)
     scenarios.append(s)
 
     # 21 
-    s = Scenario(map='Town10HD', cam_pos=(7.524465084075928,-40.997764587402344,24.158056259155273), cam_dir=(-51.83544158935547,-91.22041320800781,0.00016856557340361178), length=4000)
+    s = Scenario(map='Town10HD', cam_pos=(7.524465084075928,-40.997764587402344,24.158056259155273), cam_dir=(-51.83544158935547,-91.22041320800781,0.00016856557340361178), length=3000)
     scenarios.append(s)
 
     # 22 
-    s = Scenario(map='Town01', cam_pos=(316.9797668457031,311.3180847167969,15.83245849609375), cam_dir=(-41.68778991699219,42.994850158691406,0.00024923362070694566), length=4000)
+    s = Scenario(map='Town04', cam_pos=(72.52837371826172,-180.96755981445312,9.338313102722168), cam_dir=(-42.46043395996094,147.30682373046875,0.0), length=3000)
     scenarios.append(s)
 
     # 23
-    s = Scenario(map='Town01', cam_pos=(84.19375610351562,320.2135314941406,17.18588638305664), cam_dir=(-63.560848236083984,0.4394473135471344,0.0002447544247843325), length=4000)
+    s = Scenario(map='Town04', cam_pos=(23.82340431213379,-165.28225708007812,10.662442207336426), cam_dir=(-51.7166748046875,-141.62094116210938,2.3426902771461755e-05), length=3000)
     scenarios.append(s)
 
     # 24 
-    s = Scenario(map='Town01', cam_pos=(320.4144287109375,337.7643737792969,15.709150314331055), cam_dir=(-41.11843490600586,-65.92057037353516,1.359959969704505e-05), length=4000)
+    s = Scenario(map='Town04', cam_pos=(-30.05730438232422,-73.35159301757812,12.965838432312012), cam_dir=(-48.75633239746094,19.82217788696289,4.791660830960609e-05), length=3000)
     scenarios.append(s)
 
     # 25
-    s = Scenario(map='Town10HD', cam_pos=(-104.29922485351562,-23.038036346435547,20.315933227539062), cam_dir=(-45.07830047607422,-75.88121032714844,9.672575288277585e-06), length=4000)
+    s = Scenario(map='Town10HD', cam_pos=(-104.29922485351562,-23.038036346435547,20.315933227539062), cam_dir=(-45.07830047607422,-75.88121032714844,9.672575288277585e-06), length=3000)
     scenarios.append(s)
 
     # 26 
-    s = Scenario(map='Town02', cam_pos=(57.11075210571289,293.70635986328125,9.862232208251953), cam_dir=(-44.1141242980957,146.2111358642578,2.3783497454132885e-05), length=4000)
+    s = Scenario(map='Town02', cam_pos=(57.11075210571289,293.70635986328125,9.862232208251953), cam_dir=(-44.1141242980957,146.2111358642578,2.3783497454132885e-05), length=3000)
     scenarios.append(s)
 
     # 27
-    s = Scenario(map='Town10HD', cam_pos=(-89.47510528564453,135.5434112548828,17.469736099243164), cam_dir=(-39.64571762084961,-118.50187683105469,0.00021954052499495447), length=4000)
+    s = Scenario(map='Town10HD', cam_pos=(-89.47510528564453,135.5434112548828,17.469736099243164), cam_dir=(-39.64571762084961,-118.50187683105469,0.00021954052499495447), length=3000)
+    scenarios.append(s)
+
+    # 28
+    s = Scenario(map='Town10HD', cam_pos=(98.21633911132812,137.0532989501953,13.589766502380371), cam_dir=(-48.36974334716797,-133.8146209716797,0.00010538495553191751), length=3000)
+    scenarios.append(s)
+
+    # 29
+    s = Scenario(map='Town10HD', cam_pos=(-67.2658462524414,125.19412994384766,11.084273338317871), cam_dir=(-44.82524108886719,168.47000122070312,0.00012759777018800378), length=3000)
+    scenarios.append(s)
+
+    # 30
+    s = Scenario(map='Town10HD', cam_pos=(-94.6222152709961,1.5529531240463257,12.659930229187012), cam_dir=(-50.385921478271484,125.7801513671875,0.00012318938388489187), length=3000)
+    scenarios.append(s)
+
+    # 31 
+    s = Scenario(map='Town10HD', cam_pos=(-34.75411605834961,4.579659938812256,9.77426528930664), cam_dir=(-47.3773078918457,-141.1136932373047,0.00013364497863221914), length=3000)
+    scenarios.append(s)
+
+    # 32 
+    s = Scenario(map='Town10HD', cam_pos=(29.76532554626465,39.30972671508789,14.098193168640137), cam_dir=(-54.682037353515625,-35.331851959228516,0.00011962300050072372), length=3000)
+    scenarios.append(s)
+
+    # 33 
+    s = Scenario(map='Town10HD', cam_pos=(92.457763671875,83.59999084472656,11.70304012298584), cam_dir=(-46.222801208496094,-56.076786041259766,5.182942913961597e-05), length=3000)
+    scenarios.append(s)
+
+    # 34 
+    s = Scenario(map='Town02', cam_pos=(198.55555725097656,107.4876708984375,10.433656692504883), cam_dir=(-47.84370040893555,152.6953125,3.689077129820362e-05), length=3000)
+    scenarios.append(s)
+
+    # 35 
+    s = Scenario(map='Town02', cam_pos=(-1.4922281503677368,99.3492202758789,8.707717895507812), cam_dir=(-44.144351959228516,75.05903625488281,0.00014753315190318972), length=3000)
+    scenarios.append(s)
+
+    # 36 
+    s = Scenario(map='Town05', cam_pos=(-65.62116241455078,-96.86927795410156,13.862954139709473), cam_dir=(-51.59771728515625,21.150402069091797,4.260765854269266e-05), length=3000)
+    scenarios.append(s)
+
+    # 37
+    s = Scenario(map='Town05', cam_pos=(-111.85202026367188,-150.71258544921875,14.686253547668457), cam_dir=(-59.8665771484375,88.6191635131836,8.503461140207946e-05), length=3000)
+    scenarios.append(s)
+
+    # 38 
+    s = Scenario(map='Town05', cam_pos=(-185.8836212158203,-140.8562469482422,17.03713607788086), cam_dir=(-63.49945831298828,48.140071868896484,8.036309009185061e-05), length=3000)
+    scenarios.append(s)
+
+    # 39
+    s = Scenario(map='Town04', cam_pos=(209.04669189453125,-162.4080047607422,10.710044860839844), cam_dir=(-49.121089935302734,-130.51943969726562,1.8263584934175014e-05), length=3000)
     scenarios.append(s)
 
     return scenarios
@@ -180,6 +228,7 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
     world = client.get_world()
     traffic_manager.set_global_distance_to_leading_vehicle(1.0)
     traffic_manager.set_random_device_seed(seed)
+    world.set_pedestrians_seed(seed)
 
     # Set timing/sync settings
     settings = world.get_settings()
@@ -189,10 +238,10 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
     world.apply_settings(settings)
 
     # Setup blueprints for road user spawning
-    blueprints_vehicles = world.get_blueprint_library().filter('vehicle.*')
-    blueprints_pedestrians = world.get_blueprint_library().filter('walker.pedestrian.*')
-    blueprints_vehicles = sorted(blueprints_vehicles, key=lambda bp: bp.id)
-    blueprints_pedestrians = sorted(blueprints_pedestrians, key=lambda bp: bp.id)
+    bps_vehicles = world.get_blueprint_library().filter('vehicle.*')
+    bps_pedestrians = world.get_blueprint_library().filter('walker.pedestrian.*')
+    bps_vehicles = sorted(bps_vehicles, key=lambda bp: bp.id)
+    bps_pedestrians = sorted(bps_pedestrians, key=lambda bp: bp.id)
 
     # Get spawn points
     spawn_points = world.get_map().get_spawn_points()
@@ -212,7 +261,7 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
     for n, transform in enumerate(spawn_points):
         if n >= number_of_vehicles:
             break
-        blueprint = random.choice(blueprints_vehicles)
+        blueprint = random.choice(bps_vehicles)
         if blueprint.has_attribute('color'):
             color = random.choice(blueprint.get_attribute('color').recommended_values)
             blueprint.set_attribute('color', color)
@@ -257,7 +306,7 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
     batch = list()
     pedestrian_speeds = list()
     for spawn_point in walker_spawns:
-        walker_bp = random.choice(blueprints_pedestrians)
+        walker_bp = random.choice(bps_pedestrians)
         if walker_bp.has_attribute('is_invincible'):
                 walker_bp.set_attribute('is_invincible', 'false')
             
@@ -384,7 +433,7 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
                   'yaw': cam.dir.yaw, 'f': f, 'Cx': Cx, 'Cy': Cy}
     camera_matrix, _ = build_cam(cam_values)
 
-    bus_names = ('volkswagen.t2', )
+    bus_names = ('volkswagen.t2', 'volkswagen.t2_2021' )
     truck_names = ('carlamotors.firetruck', 'ford.ambulance', 'mercedes.sprinter', 'tesla.cybertruck', 'carlamotors.carlacola')
 
     first_id = min(vehicles)
@@ -547,7 +596,7 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
     print("Scenario finished!")
 
 
-# What happens when a sensor (camera) records an image
+# What happens when an RGB sensor (camera) records an image
 # Should be saved to file or not, depending on frame skips
 def sensor_callback(data, sensor_queue, cam_name, start_frame, folder, frame_skip):
     frame_no = data.frame - start_frame - 1
@@ -559,8 +608,15 @@ def sensor_callback(data, sensor_queue, cam_name, start_frame, folder, frame_ski
     else:
         sensor_queue.put(None)
 
+def instance_segmentation_sensor_callback(data, sensor_queue, cam_name, start_frame, folder, frame_skip):
+    frame_no = data.frame - start_frame - 1 
+    if frame_no % frame_skip == 0:
+        pass
+    else:
+        sensor_queue.put(None)
 
-def main(host:str, port:int, tm_port:int, cam_setup:list, folder:Path, scenario_number:int):
+def main(host:str, port:int, tm_port:int, cam_setup:list, folder:Path, 
+         scenario_number:int):
     client = carla.Client(host, port)
     client.set_timeout(10.0)
     traffic_manager = client.get_trafficmanager(tm_port)
