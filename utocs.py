@@ -12,6 +12,8 @@ from dataclasses import dataclass
 from queue import Queue
 from math import tan, pi, sqrt
 import json
+import numpy as np 
+import imageio as iio
 
 import carla
 from carla import VehicleLightState as vls
@@ -34,6 +36,7 @@ class Camera:
     dir:carla.Rotation
     name:str
     transform:carla.Transform
+    segobj:carla.Sensor
 
 @dataclass
 class Pedestrian:
@@ -371,19 +374,26 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
     ims_folder = scenario_folder / 'images'
     ims_folder.mkdir(exist_ok=True)
 
+    seg_folder = scenario_folder / 'instance_segmentations'
+    seg_folder.mkdir(exist_ok=True)
+
     # Spawn camera(s)
     sensor_queue = Queue()
+    seg_sensor_queue = Queue()
     cameras = list()
 
     start_frame = world.get_snapshot().frame
     cam_bp = world.get_blueprint_library().find('sensor.camera.rgb')
     
     # Instance segmentation camera:
-    #iscam_bp = world.get_blueprint_library().find('sensor.camera.instance_segmentation')
+    segcam_bp = world.get_blueprint_library().find('sensor.camera.instance_segmentation')
     
     cam_bp.set_attribute('image_size_x', str(im_size_x))
     cam_bp.set_attribute('image_size_y', str(im_size_y))
     cam_bp.set_attribute('fov', str(fov))
+    segcam_bp.set_attribute('image_size_x', str(im_size_x))
+    segcam_bp.set_attribute('image_size_y', str(im_size_y))
+    segcam_bp.set_attribute('fov', str(fov))
 
     base_location = carla.Location(*scenario.cam_pos)
     base_rotation = carla.Rotation(*scenario.cam_dir)
@@ -403,10 +413,15 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
         cam_name = f"cam{cam_no}"
 
         def closure(sensor_queue, cam_name, start_frame, ims_folder, frame_skip):
-            return lambda data: sensor_callback(data, sensor_queue, cam_name, start_frame, ims_folder, frame_skip)
-
+            return lambda data: sensor_callback(data, sensor_queue, cam_name, start_frame, ims_folder, frame_skip, 'jpg')
         cam.listen(closure(sensor_queue, cam_name, start_frame, ims_folder, frame_skip))
-        camera = Camera(cam, cam_no, cam_loc, base_rotation, cam_name, transform)
+
+        segcam = world.spawn_actor(segcam_bp, transform)
+        def closure(seg_sensor_queue, cam_name, start_frame, seg_folder, frame_skip):
+            return lambda data: sensor_callback(data, seg_sensor_queue, cam_name, start_frame, seg_folder, frame_skip, 'png')
+        segcam.listen(closure(seg_sensor_queue, cam_name, start_frame, seg_folder, frame_skip))
+        
+        camera = Camera(cam, cam_no, cam_loc, base_rotation, cam_name, transform, segcam)
         cameras.append(camera)
 
     # Collect camera positions
@@ -446,7 +461,7 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
     ground_pos = camera.loc + ground_dist*cam_forward 
     n_points = 1000
     sqrt_n_points = int(round(sqrt(n_points)))
-    ground_range = 80 # in metres
+    ground_range = 50 # in metres
     ground_points = list()
     for ix in range(sqrt_n_points):
         dx = (ix-sqrt_n_points/2.0)*2*ground_range/sqrt_n_points
@@ -469,8 +484,8 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
     (scenario_folder / 'ground_points.txt').write_text('\n'.join(ground_lines))
 
     # Start recording video
-    max_dist_to_include = 80 # in metres
-    min_height_pixels = 10
+    max_dist_to_include = 50 # in metres
+    min_height_pixels = 15
 
     for frame_no in range(scenario.length*frame_skip):
         # Tick the server
@@ -480,11 +495,15 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
         is_actual_frame = frame_no%frame_skip == 0
 
         if is_actual_frame:
-            print(f"Frame number {actual_frame_no+1} / {scenario.length}")
+            print(f"Frame number {actual_frame_no} / {scenario.length}")
 
         # Poll the sensors
         for _ in range(len(cameras)):
             fname = sensor_queue.get(True, 1.0)
+            if fname is not None:
+                print(fname)
+
+            fname = seg_sensor_queue.get(True, 1.0)
             if fname is not None:
                 print(fname)
         
@@ -582,6 +601,7 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
 
     for camera in cameras:
         camera.obj.stop()
+        camera.segobj.stop()
     time.sleep(0.2)
     
     client.apply_batch([carla.command.DestroyActor(v_id) for v_id in vehicles])
@@ -598,20 +618,20 @@ def run_scenario(client, traffic_manager, cam_setup:list, scenario:Scenario, sce
 
 # What happens when an RGB sensor (camera) records an image
 # Should be saved to file or not, depending on frame skips
-def sensor_callback(data, sensor_queue, cam_name, start_frame, folder, frame_skip):
+def sensor_callback(data, sensor_queue, cam_name, start_frame, folder, frame_skip, suffix):
     frame_no = data.frame - start_frame - 1
     if frame_no % frame_skip == 0:    
-        file_name = folder / cam_name / f"{long_str(frame_no//frame_skip, 6)}.jpg"
-        file_name.parent.mkdir(exist_ok=True)
-        data.save_to_disk(str(file_name))
-        sensor_queue.put(file_name)
-    else:
-        sensor_queue.put(None)
+        file_path = folder / cam_name / f"{long_str(frame_no//frame_skip, 6)}.{suffix}"
+        file_path.parent.mkdir(exist_ok=True)
+        
+        if suffix == 'jpg':
+            data.save_to_disk(str(file_path))
+        elif suffix == 'png':
+            array = np.frombuffer(data.raw_data, dtype=np.uint8) 
+            array = np.reshape(array, (data.height, data.width, 4))
+            iio.imwrite(file_path, array)
 
-def instance_segmentation_sensor_callback(data, sensor_queue, cam_name, start_frame, folder, frame_skip):
-    frame_no = data.frame - start_frame - 1 
-    if frame_no % frame_skip == 0:
-        pass
+        sensor_queue.put(file_path)
     else:
         sensor_queue.put(None)
 

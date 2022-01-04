@@ -20,7 +20,7 @@ The videos are stored as 720p .jpg files, at 25 FPS. By default, monocular video
 ### Instructions
 1. Install Carla Simulator 0.9.13
 1. Start the server with `./CarlaUE4.sh` in the appropriate folder, and make sure this runs before proceeding
-1. Install Python dependencies with `python3 -m pip install carla==0.9.13 shapely motmetrics scipy numpy`, or to include the optional dependencies for visualization do instead `python3 -m pip install carla==0.9.13 imageio imageio-ffmpeg opencv-python shapely motmetrics scipy numpy matplotlib`
+1. Install Python dependencies with `python3 -m pip install carla==0.9.13 shapely motmetrics scipy numpy imageio`, or to include the optional dependencies for visualization do instead `python3 -m pip install carla==0.9.13 imageio imageio-ffmpeg opencv-python shapely motmetrics scipy numpy matplotlib`
 1. While the server is running, execute `python3 start.py`. Use the `-h` flag to see options. 
 1. To run the optional visualization, run `python3 visualize.py`. Again, use `-h` to see options.
 
