@@ -38,7 +38,7 @@ if __name__ == "__main__":
     args.add_argument("--tm_port", default='8000', help="Traffic Manager communications port")
     args.add_argument("--cam_setup", default='0,0,0', help="List of camera offsets. To make a stereo camera setup with 0.5 metres distance, do '0,0,0;0.5,0,0'. Each tuple contains x, y and z distances from the default camera position. The camera is always facing in positive z direction. Separate by semicolons (note that you probably need quotes around this argument).")
     args.add_argument("--folder", default="./output", type=str, help="Folder to store output (default is './output')")
-    args.add_argument("--range", default='0-23', type=str, help="Which scenarios to run, as two integers separated by a dash, like '0-23' (inclusive)")
+    args.add_argument("--range", default='0-39', type=str, help="Which scenarios to run, as two integers separated by a dash, like '0-39' (inclusive)")
 
     args = args.parse_args()
     main(args)

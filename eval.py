@@ -152,7 +152,10 @@ def main():
 
     args.add_argument("--folder", type=str,
                       help="Path to folder with the tracks to be evaluated, " \
-                           "can also be multiple ones separated by commas")
+                           "can also be multiple ones separated by commas. " \
+                           "If you have many folders that lie next to each " \
+                           "other, you only need to include the full path to " \
+                           "the first, the rest only need the folder name.")
     args.add_argument("--gt_folder",  default="./output", type=str,
                       help="Path of ground truth",)
     args.add_argument("--set", type=str, default='test',
@@ -169,8 +172,19 @@ def main():
     args = args.parse_args()
 
     folders = [Path(f) for f in args.folder.split(',')]
-    for folder in folders:
-        assert folder.is_dir(), f"Cannot file folder {folder}"
+    for i in range(folders):
+        folder = folders[i]
+        if not folder.is_dir():
+            if i == 0:
+                raise ValueError(f"Could not find {folder}")
+
+            # Fallback, perhaps it's a neighbour to the first one
+            alt_folder = folders[0].parent / folder.name 
+            if alt_folder.is_dir():
+                folders[i] = alt_folder
+            else:
+                raise ValueError(f"Couldn't find {folder} nor {alt_folder}")
+
     gt_folder = Path(args.gt_folder)
     iou_thresh = args.iou_thresh
     which_set = args.set
