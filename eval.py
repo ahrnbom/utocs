@@ -159,7 +159,7 @@ def main():
     args.add_argument("--gt_folder",  default="./output", type=str,
                       help="Path of ground truth",)
     args.add_argument("--set", type=str, default='test',
-                      help="Either 'training', 'validation' or 'test")
+                      help="Either 'training', 'validation' or 'test'")
     args.add_argument("--classes", type=str, default="",
                       help="Set to a comma-separated list of classes to only " \
                            "evaluate those")
@@ -172,7 +172,7 @@ def main():
     args = args.parse_args()
 
     folders = [Path(f) for f in args.folder.split(',')]
-    for i in range(folders):
+    for i in range(len(folders)):
         folder = folders[i]
         if not folder.is_dir():
             if i == 0:
