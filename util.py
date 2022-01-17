@@ -61,7 +61,11 @@ def pflat(x):
         x /= x[-1, :]
     return x
 
-def print_table(row_names:List[str], col_names:List[str], matrix:np.ndarray):
+def print_table(row_names:List[str], col_names:List[str], matrix:np.ndarray,
+                decimals=2):
+    
+    matrix = np.around(matrix, decimals=decimals)
+    
     row_names = np.array(row_names, dtype=str).reshape((len(row_names), 1))
     matrix = np.hstack([row_names, matrix])
     col_names = np.array(['', *col_names], dtype=str)
@@ -71,7 +75,8 @@ def print_table(row_names:List[str], col_names:List[str], matrix:np.ndarray):
     max_len = max([len(v) for v in matrix.flatten()])
     for i in range(matrix.shape[0]):
         for j in range(matrix.shape[1]):
-            matrix[i, j] = long_str(matrix[i,j], max_len, padding=' ')
+            val = matrix[i,j]
+            matrix[i, j] = long_str(val, max_len, padding=' ')
 
     print(np.array2string(matrix, max_line_width=200))
     

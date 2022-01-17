@@ -212,14 +212,16 @@ def main():
                                     verbose=False,
                                     metric=metric)
             
-            motas[i_seq, i_folder] = mota 
+            motas[i_seq, i_folder] = mota*100.0
         
         print_table(seqs[:i_seq+1], [f.name for f in folders], 
                     motas[:i_seq+1, :])
         print("")
 
     for i_folder, folder in enumerate(folders):    
-        mean_mota = np.mean(motas[:, i_folder])
+        values = motas[:, i_folder]
+        values = values[~np.isinf(values) & ~np.isnan(values)]
+        mean_mota = np.mean(values)
         print(f"Average MOTA for method {folder.name} is {mean_mota}")
 
 if __name__=="__main__":
