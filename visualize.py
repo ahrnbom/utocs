@@ -231,6 +231,9 @@ def render_topdown_frame(dims:Tuple, classes:List[str], attempt:List[Dict],
         ax.add_patch(rect)
 
         if gt_mode:
+            ll = max(1.5, l)
+            plt.arrow(x, y, ll*np.cos(phi), ll*np.sin(phi), width=0.005,
+                      head_width=1.0, color=edge_color)
             plt.text(x, y, f"{gt['type']}{gt['id']}")
 
         minx = min(minx, x)
@@ -254,6 +257,10 @@ def render_topdown_frame(dims:Tuple, classes:List[str], attempt:List[Dict],
             rect = rotated_rectangle(x, y, l, w, phi, edge_color, face_color)
             ax.add_patch(rect)
 
+            ll = max(1.5, l)
+            plt.arrow(x, y, ll*np.cos(phi), ll*np.sin(phi), width=0.005,
+                      head_width=1.0, color=edge_color)
+
             plt.text(x, y, f"{at['type']}{at['id']}")
 
             minx = min(minx, x)
@@ -267,10 +274,22 @@ def render_topdown_frame(dims:Tuple, classes:List[str], attempt:List[Dict],
     plt.arrow(cam_cen[0], cam_cen[1], cam_dir[0], cam_dir[1], width=0.01,
               head_width=1.0)
 
-    plt.xlim(minx - 2, maxx + 2)
-    plt.ylim(miny - 2, maxy + 2)
+    # Include the camera 
+    minx = min(minx, cam_cen[0])
+    maxx = max(maxx, cam_cen[0])
+    miny = min(miny, cam_cen[1])
+    maxy = max(maxy, cam_cen[1])
+
+    # Orient plot based on camera angle    
+    if cam_dir[1] > 0:
+        plt.ylim(miny - 2, maxy + 2)
+        plt.xlim(maxx + 2, minx - 2)
+    else:
+        plt.ylim(maxy + 2, miny - 2)
+        plt.xlim(minx - 2, maxx + 2)
 
     # Convert to image as a numpy array 
+    plt.tight_layout()
     fig.canvas.draw()
     buf = np.asarray(fig.canvas.buffer_rgba())[:, :, 0:3] # we only need RGB
     buf = good_resize(buf, dims[0], dims[1])
