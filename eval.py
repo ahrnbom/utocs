@@ -5,7 +5,6 @@
 import motmetrics as mm 
 from dataclasses import dataclass
 import numpy as np
-from scipy.linalg.decomp_svd import null_space 
 import shapely.geometry
 import shapely.affinity
 from typing import List
@@ -13,9 +12,7 @@ from pathlib import Path
 import json 
 import argparse
 
-from util import long_str, vector_dist, pflat, print_table
-from cameras import build_camera_matrices
-
+from util import good_lstrip, long_str, vector_dist, print_table
 
 @dataclass
 class RoadUser:
@@ -201,7 +198,10 @@ def main():
     assert which_set in ['training', 'validation', 'test']
     seq_nums = get_seqnums()
     seqs = seq_nums[which_set]
-    motas = np.zeros((len(seqs), len(folders)), dtype=np.float32)
+    motas = np.zeros((len(folders), len(seqs)), dtype=np.float32)
+    fnames = [f.name.lower() for f in folders]
+    fnames = [good_lstrip(f, 'utocs') for f in fnames if f.startswith('utocs')]
+
     for i_seq, seq_num in enumerate(seqs):
         seq = gt_folder / 'scenarios' / long_str(seq_num, 4)
         for i_folder, folder in enumerate(folders):
@@ -212,10 +212,10 @@ def main():
                                     verbose=False,
                                     metric=metric)
             
-            motas[i_seq, i_folder] = mota*100.0
+            motas[i_folder, i_seq] = mota*100.0
         
-        print_table(seqs[:i_seq+1], [f.name for f in folders], 
-                    motas[:i_seq+1, :])
+        print_table(fnames, seqs[:i_seq+1], 
+                    motas[:, :i_seq+1])
         print("")
 
     for i_folder, folder in enumerate(folders):    
