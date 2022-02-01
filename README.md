@@ -15,7 +15,7 @@ The videos are stored as 720p .jpg files, at 25 FPS. By default, monocular video
 ![Example image from UTOCS](https://raw.githubusercontent.com/ahrnbom/utocs/main/examples/example1.jpg)
 
 ### License
-*LICENSE COMING SOON*
+The UTOCS dataset, and all the code in this repository, is released under the MIT License. See the file `LICENSE` for details.
 
 ### Dataset Download
 If you are unable or unwilling to run the UTOCS code to generate the dataset, you can also download the dataset from this link, with only a monocular view:
@@ -25,7 +25,7 @@ If you are unable or unwilling to run the UTOCS code to generate the dataset, yo
 ### Citation
 If you use the UTOCS dataset in your research, please cite this paper:
 
-*BIBTEX COMING SOON*
+*PAPER NOT YET PUBLISHED, BIBTEX WILL APPEAR HERE LATER*
 
 ### Instructions
 1. Install Carla Simulator 0.9.13
