@@ -1,3 +1,16 @@
+"""
+    Copyright (C) 2022 Martin Ahrnbom
+    This work is released under the MIT License. 
+    See the file LICENSE for details
+
+
+    This script is an entry point for creating the UTOCS dataset. 
+    It launches utocs.py as subprocesses, which seems more stable than 
+    running multiple times within the same process
+"""
+
+
+
 import sys
 import subprocess
 import argparse
@@ -10,7 +23,8 @@ def main(args):
     cam_setup = args.cam_setup
     folder_str = args.folder 
 
-    # Copy over the file sets.txt, to make it easier for methods using UTOCS to use it 
+    # Copy over the file sets.txt, to make it easier for methods using 
+    # UTOCS to use it 
     folder = Path(folder_str)
     folder.mkdir(exist_ok=True, parents=True)
     sets_text = Path('sets.txt').read_text()
@@ -21,15 +35,19 @@ def main(args):
     start, stop = [int(v) for v in scenario_string.split('-')]
 
     for s_num in range(start, stop+1):
-        command = [sys.executable, 'utocs.py', '--host', host, '--port', port, '--tm_port', tm_port, '--cam_setup', cam_setup, '--folder', folder_str, '--scenario_number', str(s_num)]
+        command = [sys.executable, 'utocs.py', '--host', host, '--port', port, 
+                   '--tm_port', tm_port, '--cam_setup', cam_setup, 
+                   '--folder', folder_str, '--scenario_number', str(s_num)]
         print(command)
         p = subprocess.Popen(command, shell=False)
         result = p.wait()
 
         if result != 0:
-            print("IMPORTANT! You need to reset the CARLA server to ensure the resulting videos will be valid")
+            print("IMPORTANT! You need to reset the CARLA server to ensure "\
+                  "the resulting videos will be valid")
 
-            raise ValueError(f"Failure! Error code {result}. Error messages: {p.stderr}")
+            raise ValueError(f"Failure! Error code {result}. "\
+                             f"Error messages: {p.stderr}")
             
 if __name__ == "__main__":
     args = argparse.ArgumentParser()

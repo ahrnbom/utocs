@@ -1,5 +1,11 @@
 """
-    Creates standard videos 
+    Copyright (C) 2022 Martin Ahrnbom
+    This work is released under the MIT License. 
+    See the file LICENSE for details
+
+
+    Creates the standard videos of the UTOCS dataset. Typically started from 
+    start.py, rather than directly from the command line.
 """
 
 import argparse

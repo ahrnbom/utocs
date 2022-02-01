@@ -1,4 +1,9 @@
 """
+    Copyright (C) 2022 Martin Ahrnbom
+    This work is released under the MIT License. 
+    See the file LICENSE for details
+
+
     This script visualizes user generated tracks alongside the ground truth
     in both pixel and world coordinates (top-down) as videos. Can also be used
     to only visualize the ground truth 

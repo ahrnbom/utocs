@@ -1,3 +1,12 @@
+"""
+    Copyright (C) 2022 Martin Ahrnbom
+    This work is released under the MIT License. 
+    See the file LICENSE for details
+
+
+    Utility functions
+"""
+
 from math import sqrt
 from typing import List
 import numpy as np 

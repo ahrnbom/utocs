@@ -1,4 +1,9 @@
 """
+    Copyright (C) 2022 Martin Ahrnbom
+    This work is released under the MIT License. 
+    See the file LICENSE for details
+
+    
     A module for loading camera matrices from json files 
 """
 

@@ -1,4 +1,9 @@
 """
+    Copyright (C) 2022 Martin Ahrnbom
+    This work is released under the MIT License. 
+    See the file LICENSE for details
+
+
     Simple script to get the position and orientation of camera written to the terminal. 
     This script was used to create the default scenarios.
 """
