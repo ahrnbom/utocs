@@ -20,9 +20,9 @@ The UTOCS dataset, and all the code in this repository, is released under the MI
 ### Dataset Download
 If you are unable or unwilling to run the UTOCS code to generate the dataset, you can also download the dataset from this link, with only a monocular view:
 
-*LINK COMING SOON*
+[**Dataset download**](https://lunduniversityo365-my.sharepoint.com/:f:/g/personal/ma7467ah_lu_se/EjhHOTOxxI9CrMdXjydDW6ABSC35enpp2yh8e1IhlVdi_A?e=DvX156)
 
-This file is *XX* GiB.
+It is divided into 17 files, around 4 GiB each. The total size is around 69 GiB. The compression format is [7z](https://www.7-zip.org/).
 
 ### Citation
 If you use the UTOCS dataset in your research, please cite this paper:
