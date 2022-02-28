@@ -224,7 +224,7 @@ def main():
         print("")
 
     for i_folder, folder in enumerate(folders):    
-        values = motas[:, i_folder]
+        values = motas[i_folder, :]
         values = values[~np.isinf(values) & ~np.isnan(values)]
         mean_mota = np.mean(values)
         print(f"Average MOTA for method {folder.name} is {mean_mota}")
