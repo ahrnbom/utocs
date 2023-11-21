@@ -26,8 +26,7 @@ It is divided into 17 files, around 4 GiB each. The total size is around 69 GiB.
 
 ### Citation
 If you use the UTOCS dataset in your research, please cite this paper:
-
-*PAPER NOT YET PUBLISHED, BIBTEX WILL APPEAR HERE LATER*
+https://ieeexplore.ieee.org/abstract/document/9921949
 
 ### Instructions
 1. Install Carla Simulator 0.9.13
